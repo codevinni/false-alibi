@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +14,13 @@ import {
   useSoundEffectOnMount,
   useSoundHandler,
 } from '../services/audio';
+import {
+  useCrimeSceneImage,
+  useStaticImage,
+  useSuspectAvatar,
+} from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
+import SuspectAvatar from '../components/SuspectAvatar';
 
 export default function ResultScreen({
   navigation: navProp,
@@ -38,6 +46,13 @@ export default function ResultScreen({
     route?.params?.crimeCase ?? fallbackGame.crimeCase ?? mockCrimeCase;
   const accusedSuspect = route?.params?.accusedSuspect;
 
+  const banner = useStaticImage(isVictory ? 'victory_banner' : 'defeat_banner');
+  const sceneImage = useCrimeSceneImage(crimeCase);
+  const accusedAvatar = useSuspectAvatar(
+    accusedSuspect ?? crimeCase.culprit,
+    crimeCase,
+  );
+
   const resultBadgeText = isVictory ? 'VITÓRIA' : 'DERROTA';
   const feedbackMessage = isVictory
     ? 'Parabéns, detetive! O caso foi solucionado com sucesso.'
@@ -48,23 +63,33 @@ export default function ResultScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground
+      source={sceneImage}
+      overlayOpacity={0.6}
+      style={styles.container}
+    >
       <View style={styles.cardContainer}>
-        <Text
-          style={[
-            styles.resultBadge,
-            isVictory ? styles.victoryText : styles.defeatText,
-          ]}
-        >
-          {resultBadgeText}
-        </Text>
+        <Image
+          source={banner}
+          style={styles.banner}
+          resizeMode="contain"
+          accessible={true}
+          accessibilityLabel={resultBadgeText}
+        />
 
         <Text style={styles.feedbackText}>{feedbackMessage}</Text>
 
         {accusedSuspect && (
-          <Text style={styles.accusedText}>
-            Suspeito acusado: {accusedSuspect.name}
-          </Text>
+          <View style={styles.accusedRow}>
+            <SuspectAvatar
+              source={accusedAvatar}
+              name={accusedSuspect.name}
+              size={44}
+            />
+            <Text style={styles.accusedText}>
+              Suspeito acusado: {accusedSuspect.name}
+            </Text>
+          </View>
         )}
 
         <View style={styles.solutionContainer}>
@@ -84,7 +109,7 @@ export default function ResultScreen({
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </ScreenBackground>
   );
 }
 
@@ -103,28 +128,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: 'rgba(26, 26, 26, 0.92)',
     padding: 20,
     alignItems: 'center',
     gap: 10,
-  },
-  resultBadge: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
-    textAlign: 'center',
-  },
-  victoryText: {
-    color: '#A5D6A7',
-  },
-  defeatText: {
-    color: '#EF9A9A',
   },
   feedbackText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#F5F5F5',
     textAlign: 'center',
+  },
+  banner: {
+    width: '100%',
+    maxWidth: 360,
+    aspectRatio: 3,
+  },
+  accusedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   accusedText: {
     fontSize: 14,

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   BackHandler,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -8,6 +9,8 @@ import {
 } from 'react-native';
 import { ScreenProps, useNavigation } from '../navigation';
 import { useBackgroundMusic, useSoundHandler } from '../services/audio';
+import { useStaticImage } from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
 
 export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScreen'>) {
   const contextNav = useNavigation();
@@ -15,6 +18,8 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
   const withSound = useSoundHandler();
 
   useBackgroundMusic('main_theme');
+  const background = useStaticImage('home_background');
+  const detective = useStaticImage('detective');
 
   const handlePlay = () => {
     navigation.navigate('BriefingScreen');
@@ -29,47 +34,72 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.logoTitle}>FALSE Alibi</Text>
+    <ScreenBackground
+      source={background}
+      overlayOpacity={0.15}
+      style={styles.container}
+    >
+      <View style={styles.menuArea}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.logoTitle}>FALSE Alibi</Text>
+        </View>
+
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={withSound(handlePlay)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.buttonText}>Jogar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={withSound(handleSettings)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.buttonText}>Configurações</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={withSound(handleExit)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.buttonText}>Sair</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.menuContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={withSound(handlePlay)}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonText}>Jogar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={withSound(handleSettings)}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonText}>Configurações</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={withSound(handleExit)}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonText}>Sair</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      <Image
+        source={detective}
+        style={styles.detective}
+        resizeMode="contain"
+        accessibilityIgnoresInvertColors={true}
+      />
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: '#121212',
+    // deixa visível o quadro de investigação do lado esquerdo do fundo
+    paddingLeft: '34%',
+  },
+  menuArea: {
+    flex: 1,
+    alignSelf: 'stretch',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',
     padding: 24,
+  },
+  detective: {
+    height: '92%',
+    aspectRatio: 2 / 3,
   },
   headerContainer: {
     marginBottom: 32,
@@ -80,6 +110,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#F5F5F5',
     letterSpacing: 2,
+    textShadowColor: '#000000',
+    textShadowRadius: 8,
   },
   menuContainer: {
     width: '100%',
@@ -96,7 +128,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: 'rgba(30, 30, 30, 0.85)',
   },
   buttonText: {
     fontSize: 16,

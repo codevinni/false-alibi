@@ -13,6 +13,8 @@ import {
   useSoundEffectOnMount,
   useSoundHandler,
 } from '../services/audio';
+import { useCrimeSceneImage } from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
 
 export default function BriefingScreen({
   navigation: navProp,
@@ -26,6 +28,7 @@ export default function BriefingScreen({
 
   useBackgroundMusic('investigation');
   useSoundEffectOnMount('new_case');
+  const sceneImage = useCrimeSceneImage(crimeCase);
 
   const game = route?.params?.game ?? mockGame;
   const crimeCase = route?.params?.crimeCase ?? game.crimeCase ?? mockCrimeCase;
@@ -38,7 +41,11 @@ export default function BriefingScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground
+      source={sceneImage}
+      overlayOpacity={0.25}
+      style={styles.container}
+    >
       <View style={styles.cardContainer}>
         <Text style={styles.title}>{crimeCase.title}</Text>
 
@@ -59,7 +66,7 @@ export default function BriefingScreen({
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </ScreenBackground>
   );
 }
 
@@ -67,18 +74,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    // card à direita para a cena do crime continuar visível
+    alignItems: 'flex-end',
     backgroundColor: '#121212',
     padding: 20,
   },
   cardContainer: {
     width: '100%',
-    maxWidth: 640,
+    maxWidth: 420,
     maxHeight: '100%',
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: 'rgba(26, 26, 26, 0.9)',
     padding: 20,
     alignItems: 'center',
     gap: 14,

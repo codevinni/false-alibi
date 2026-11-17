@@ -8,6 +8,9 @@ import {
 } from 'react-native';
 import { mockSuspects } from '../mocks';
 import { useSoundHandler } from '../services/audio';
+import { useStaticImage, useSuspectAvatar } from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
+import SuspectAvatar from '../components/SuspectAvatar';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
 
 export default function HistoryScreen({
@@ -22,6 +25,8 @@ export default function HistoryScreen({
 
   const suspect = route?.params?.suspect ?? mockSuspects[0];
   const messages = suspect?.interrogationHistory?.messages ?? [];
+  const avatar = useSuspectAvatar(suspect, route?.params?.crimeCase);
+  const background = useStaticImage('interrogation_room');
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
@@ -32,9 +37,16 @@ export default function HistoryScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground
+      source={background}
+      overlayOpacity={0.55}
+      style={styles.container}
+    >
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>Histórico: {suspect.name}</Text>
+        <View style={styles.titleRow}>
+          <SuspectAvatar source={avatar} name={suspect.name} size={56} />
+          <Text style={styles.title}>Histórico: {suspect.name}</Text>
+        </View>
 
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -72,7 +84,7 @@ export default function HistoryScreen({
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </ScreenBackground>
   );
 }
 
@@ -91,8 +103,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: 'rgba(26, 26, 26, 0.92)',
     padding: 16,
+    alignItems: 'center',
+    gap: 12,
+  },
+  titleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },

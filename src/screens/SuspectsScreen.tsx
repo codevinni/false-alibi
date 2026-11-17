@@ -10,6 +10,9 @@ import {
 import { mockCrimeCase, mockGame } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
 import { useSoundHandler } from '../services/audio';
+import { useCaseAvatars, useStaticImage } from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
+import SuspectAvatar from '../components/SuspectAvatar';
 import { Suspect } from '../types';
 
 export default function SuspectsScreen({
@@ -28,6 +31,8 @@ export default function SuspectsScreen({
 
   const game = route?.params?.game ?? mockGame;
   const crimeCase = route?.params?.crimeCase ?? game.crimeCase ?? mockCrimeCase;
+  const getAvatar = useCaseAvatars(crimeCase);
+  const background = useStaticImage('home_background');
 
   const handleInterrogate = (suspect: Suspect) => {
     navigation.navigate('InterrogationScreen', {
@@ -59,7 +64,11 @@ export default function SuspectsScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground
+      source={background}
+      overlayOpacity={0.65}
+      style={styles.container}
+    >
       <View style={styles.headerContainer}>
         <Text style={styles.title}>Quadro de Suspeitos</Text>
 
@@ -78,6 +87,11 @@ export default function SuspectsScreen({
       >
         {crimeCase.suspects.map(suspect => (
           <View key={suspect.id} style={styles.suspectCard}>
+            <SuspectAvatar
+              source={getAvatar(suspect)}
+              name={suspect.name}
+              size={110}
+            />
             <Text style={styles.suspectName}>{suspect.name}</Text>
 
             <View style={styles.cardButtonsContainer}>
@@ -135,7 +149,7 @@ export default function SuspectsScreen({
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenBackground>
   );
 }
 
@@ -184,7 +198,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: 'rgba(26, 26, 26, 0.92)',
     padding: 12,
     alignItems: 'center',
     gap: 10,
