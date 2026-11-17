@@ -157,8 +157,8 @@ useBackgroundMusic('investigation');
 
 ## 5. Sons disponíveis e como trocá-los
 
-A música principal (`music_main_theme.mp3`) já é a trilha definitiva; os demais
-arquivos são **placeholders** gerados por
+As músicas (`music_main_theme.mp3` e `music_investigation.mp3`) já são as
+trilhas definitivas; os efeitos sonoros são **placeholders** gerados por
 `scripts/generate-placeholder-sounds.py` (Python puro, sem dependências).
 
 | Chave | Arquivo | Onde toca |
@@ -169,7 +169,7 @@ arquivos são **placeholders** gerados por
 | `victory` | `victory.wav` | Resultado — vitória |
 | `defeat` | `defeat.wav` | Resultado — derrota |
 | `main_theme` | `music_main_theme.mp3` | Menu inicial (loop) — faixa padrão, trilha definitiva |
-| `investigation` | `music_investigation.wav` | Briefing em diante (loop) |
+| `investigation` | `music_investigation.mp3` | Briefing em diante (loop) — trilha definitiva |
 
 **Trocar um som:**
 

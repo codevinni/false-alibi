@@ -43,7 +43,7 @@ export const MUSIC_TRACKS: Record<MusicTrackType, SoundAsset> = {
     volume: 0.8,
   },
   investigation: {
-    source: require('../../assets/sounds/music_investigation.wav'),
+    source: require('../../assets/sounds/music_investigation.mp3'),
     volume: 0.8,
   },
 };

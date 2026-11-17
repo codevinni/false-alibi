@@ -1,7 +1,7 @@
 # Sons do False Alibi
 
-A música principal (`music_main_theme.mp3`) é a trilha definitiva do menu.
-Os demais arquivos ainda são **placeholders** gerados por
+As músicas (`music_main_theme.mp3` e `music_investigation.mp3`) são as
+trilhas definitivas. Os efeitos sonoros ainda são **placeholders** gerados por
 `scripts/generate-placeholder-sounds.py` (bipes e arpejos simples).
 
 | Arquivo                   | Uso                                   | Chave no código   |
@@ -12,7 +12,7 @@ Os demais arquivos ainda são **placeholders** gerados por
 | `victory.wav`             | tela de resultado — vitória           | `victory`         |
 | `defeat.wav`              | tela de resultado — derrota           | `defeat`          |
 | `music_main_theme.mp3`    | música do menu — faixa padrão (loop)  | `main_theme`      |
-| `music_investigation.wav` | música durante a investigação (loop)  | `investigation`   |
+| `music_investigation.mp3` | música durante a investigação (loop)  | `investigation`   |
 
 ## Como trocar um som
 
