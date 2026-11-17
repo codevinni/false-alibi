@@ -89,7 +89,12 @@ Todos os valores vão de 0 a 1; valores fora disso são ajustados automaticament
 ### 3.4 Efeitos sonoros
 
 - São pré-carregados em `init()`, para tocar sem atraso no primeiro toque.
-- Se o mesmo efeito for disparado de novo enquanto toca, ele recomeça.
+- Se o mesmo efeito for disparado de novo enquanto toca, ele recomeça; se não
+  estiver tocando, toca direto (uma única chamada nativa, menor atraso).
+- Os botões tocam o som no `onPressIn` (ao encostar o dedo), não no `onPress`
+  (ao soltar), para o clique soar junto com o toque.
+- O emulador Android tem latência de áudio bem maior que um aparelho real;
+  avalie o atraso no celular.
 - Há um intervalo mínimo de 60 ms entre duas execuções do mesmo efeito
   (`SFX_COOLDOWN_MS`), para toques repetidos não virarem "metralhadora".
 
@@ -136,7 +141,7 @@ segue sem aquele som. Se a biblioteca nativa não estiver disponível, o app usa
 | `useAudioSettings()` | Lê volumes/mute e re-renderiza quando mudam. |
 | `useBackgroundMusic(faixa \| null)` | Define a música da tela (`null` para parar). |
 | `useSoundEffectOnMount(efeito, atrasoMs?)` | Toca um efeito ao abrir a tela. |
-| `useSoundHandler()` | Retorna `withSound(handler, efeito?)`, que toca um som (clique por padrão) antes de executar o handler. |
+| `useSoundHandler()` | Retorna `withSound(handler, efeito?)`, que gera as props `onPressIn` (toca o som quando o dedo encosta) e `onPress` (executa o handler). Uso: `<TouchableOpacity {...withSound(handler)} />`. |
 
 Exemplo:
 
@@ -144,8 +149,8 @@ Exemplo:
 const withSound = useSoundHandler();
 useBackgroundMusic('investigation');
 
-<TouchableOpacity onPress={withSound(handleAdvance)} />
-<TouchableOpacity onPress={withSound(() => handleAccuse(s), 'accusation')} />
+<TouchableOpacity {...withSound(handleAdvance)} />
+<TouchableOpacity {...withSound(() => handleAccuse(s), 'accusation')} />
 ```
 
 ---

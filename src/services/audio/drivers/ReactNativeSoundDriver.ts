@@ -7,22 +7,41 @@ import { AudioDriver, AudioHandle } from './AudioDriver';
  * Architecture). É o ÚNICO arquivo do projeto que importa a biblioteca.
  */
 class ReactNativeSoundHandle implements AudioHandle {
+  // Estado local para evitar idas e vindas ao lado nativo (cada chamada
+  // custa alguns milissegundos e soma no atraso do clique).
+  private playing = false;
+  private volume = -1;
+
   constructor(private readonly sound: Sound) {}
 
   play(onEnd?: (success: boolean) => void) {
-    this.sound.play(success => onEnd?.(success));
+    this.playing = true;
+    this.sound.play(success => {
+      this.playing = false;
+      onEnd?.(success);
+    });
   }
 
   pause() {
+    this.playing = false;
     this.sound.pause();
   }
 
   stop(onStopped?: () => void) {
+    this.playing = false;
     this.sound.stop(() => onStopped?.());
   }
 
   setVolume(volume: number) {
+    if (volume === this.volume) {
+      return; // já está nesse volume: não chama o nativo
+    }
+    this.volume = volume;
     this.sound.setVolume(volume);
+  }
+
+  isPlaying() {
+    return this.playing;
   }
 
   setLoop(loop: boolean) {

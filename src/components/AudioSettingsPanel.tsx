@@ -15,8 +15,8 @@ function VolumeRow({ label, value, disabled, onChange }: VolumeRowProps) {
   const change = (delta: number) => {
     // arredonda para evitar 0.30000000004
     onChange(Math.round((value + delta) * 100) / 100);
-    audioService.playSoundEffect('button_click');
   };
+  const playClick = () => audioService.playSoundEffect('button_click');
 
   return (
     <View style={[styles.row, disabled && styles.rowDisabled]}>
@@ -24,6 +24,7 @@ function VolumeRow({ label, value, disabled, onChange }: VolumeRowProps) {
       <View style={styles.stepper}>
         <TouchableOpacity
           style={styles.stepButton}
+          onPressIn={playClick}
           onPress={() => change(-VOLUME_STEP)}
           disabled={value <= 0}
           accessibilityRole="button"
@@ -34,6 +35,7 @@ function VolumeRow({ label, value, disabled, onChange }: VolumeRowProps) {
         <Text style={styles.value}>{percent}%</Text>
         <TouchableOpacity
           style={styles.stepButton}
+          onPressIn={playClick}
           onPress={() => change(VOLUME_STEP)}
           disabled={value >= 1}
           accessibilityRole="button"

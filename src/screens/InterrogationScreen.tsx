@@ -47,7 +47,7 @@ export default function InterrogationScreen({
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={withSound(handleGoBack)}
+            {...withSound(handleGoBack)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Voltar</Text>

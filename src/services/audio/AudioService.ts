@@ -140,11 +140,17 @@ export class AudioService implements IAudioService {
       if (!handle) {
         return;
       }
-      // stop() antes de play() faz o efeito reiniciar se ainda estiver tocando
-      handle.stop(() => {
+      const start = () => {
         handle.setVolume(volume);
         handle.play();
-      });
+      };
+      // Só para (e espera a parada) se o efeito ainda estiver tocando;
+      // no caso comum toca direto, com uma única chamada nativa.
+      if (handle.isPlaying()) {
+        handle.stop(start);
+      } else {
+        start();
+      }
     });
   };
 

@@ -15,6 +15,9 @@ class SilentHandle implements AudioHandle {
   setVolume() {}
   setLoop() {}
   release() {}
+  isPlaying() {
+    return false;
+  }
 }
 
 export class SilentAudioDriver implements AudioDriver {

@@ -14,15 +14,22 @@ class FakeHandle implements AudioHandle {
   calls: string[] = [];
   volume = -1;
   loop = false;
+  playing = false;
   play() {
+    this.playing = true;
     this.calls.push('play');
   }
   pause() {
+    this.playing = false;
     this.calls.push('pause');
   }
   stop(onStopped?: () => void) {
+    this.playing = false;
     this.calls.push('stop');
     onStopped?.();
+  }
+  isPlaying() {
+    return this.playing;
   }
   setVolume(v: number) {
     this.volume = v;
@@ -83,7 +90,19 @@ describe('AudioService', () => {
     await flush();
     const h = driver.handles.get(1)!;
     expect(h.volume).toBeCloseTo(0.5 * 0.8 * 0.5);
-    expect(h.calls).toEqual(['stop', 'play']);
+    // não estava tocando: toca direto, sem stop
+    expect(h.calls).toEqual(['play']);
+  });
+
+  test('efeito ainda tocando é reiniciado (stop + play)', async () => {
+    const { driver, service } = setup();
+    await service.init();
+    service.playSoundEffect('new_case');
+    await flush();
+    await new Promise(resolve => setTimeout(resolve, 80)); // passa o cooldown
+    service.playSoundEffect('new_case');
+    await flush();
+    expect(driver.handles.get(2)!.calls).toEqual(['play', 'stop', 'play']);
   });
 
   test('mute impede efeitos e zera a música sem pará-la', async () => {

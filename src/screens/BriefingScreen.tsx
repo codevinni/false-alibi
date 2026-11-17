@@ -59,7 +59,7 @@ export default function BriefingScreen({
         <View style={styles.footerContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={withSound(handleAdvance)}
+            {...withSound(handleAdvance)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Avançar</Text>

@@ -15,6 +15,8 @@ export interface AudioHandle {
   setVolume: (volume: number) => void;
   setLoop: (loop: boolean) => void;
   release: () => void;
+  // true entre play() e o fim/parada do som (controle local, síncrono)
+  isPlaying: () => boolean;
 }
 
 export interface AudioDriver {

@@ -49,20 +49,26 @@ export function useSoundEffectOnMount(
   }, [effect, delayMs]);
 }
 
+export interface SoundPressProps {
+  onPressIn: () => void;
+  onPress: () => void;
+}
+
 /**
- * Envolve um handler de toque para tocar um efeito antes de executá-lo.
- * Ex.: onPress={withSound(handlePlay)}
+ * Props de toque com som. O efeito toca no onPressIn (quando o dedo ENCOSTA),
+ * não no onPress (quando solta) — isso reduz bastante o atraso percebido.
+ * Ex.: <TouchableOpacity {...withSound(handlePlay)} />
+ *      <TouchableOpacity {...withSound(() => acusar(s), 'accusation')} />
  */
 export function useSoundHandler() {
   return useCallback(
-    <Args extends unknown[]>(
-      handler: (...args: Args) => void,
+    (
+      handler: () => void,
       effect: SoundEffectType = 'button_click',
-    ) =>
-      (...args: Args) => {
-        audioService.playSoundEffect(effect);
-        handler(...args);
-      },
+    ): SoundPressProps => ({
+      onPressIn: () => audioService.playSoundEffect(effect),
+      onPress: handler,
+    }),
     [],
   );
 }

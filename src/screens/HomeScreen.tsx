@@ -58,7 +58,7 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
         <View style={styles.menuContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={withSound(handlePlay)}
+            {...withSound(handlePlay)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Jogar</Text>
@@ -66,7 +66,7 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
 
           <TouchableOpacity
             style={styles.button}
-            onPress={withSound(handleSettings)}
+            {...withSound(handleSettings)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Configurações</Text>
@@ -74,7 +74,7 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
 
           <TouchableOpacity
             style={styles.button}
-            onPress={withSound(handleExit)}
+            {...withSound(handleExit)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Sair</Text>

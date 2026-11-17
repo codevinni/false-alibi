@@ -77,7 +77,7 @@ export default function HistoryScreen({
         <View style={styles.footerContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={withSound(handleGoBack)}
+            {...withSound(handleGoBack)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Voltar</Text>

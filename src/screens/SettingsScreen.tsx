@@ -15,6 +15,8 @@ import { audioService } from '../services/audio';
 // (ex.: AsyncStorage ou MMKV), a chave de API é mantida apenas em estado local / memória durante a execução.
 let sessionApiKey = '';
 
+const playClick = () => audioService.playSoundEffect('button_click');
+
 export default function SettingsScreen({
   navigation: navProp,
 }: ScreenProps<'SettingsScreen'>) {
@@ -25,7 +27,6 @@ export default function SettingsScreen({
   const [savedMessage, setSavedMessage] = useState<string>('');
 
   const handleSaveApiKey = () => {
-    audioService.playSoundEffect('button_click');
     const trimmedKey = apiKey.trim();
     sessionApiKey = trimmedKey;
     setApiKey(trimmedKey);
@@ -37,7 +38,6 @@ export default function SettingsScreen({
   };
 
   const handleGoBack = () => {
-    audioService.playSoundEffect('button_click');
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
@@ -87,6 +87,7 @@ export default function SettingsScreen({
         <View style={styles.buttonsRow}>
           <TouchableOpacity
             style={styles.button}
+            onPressIn={playClick}
             onPress={handleGoBack}
             accessibilityRole="button"
           >
@@ -95,6 +96,7 @@ export default function SettingsScreen({
 
           <TouchableOpacity
             style={styles.button}
+            onPressIn={playClick}
             onPress={handleSaveApiKey}
             accessibilityRole="button"
           >

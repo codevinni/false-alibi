@@ -102,7 +102,7 @@ export default function ResultScreen({
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={withSound(handleReturnToHome)}
+            {...withSound(handleReturnToHome)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Voltar ao início</Text>

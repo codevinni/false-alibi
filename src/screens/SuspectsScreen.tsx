@@ -74,7 +74,7 @@ export default function SuspectsScreen({
 
         <TouchableOpacity
           style={styles.reviewButton}
-          onPress={withSound(() => setIsReviewModalVisible(true))}
+          {...withSound(() => setIsReviewModalVisible(true))}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Revisar caso</Text>
@@ -97,7 +97,7 @@ export default function SuspectsScreen({
             <View style={styles.cardButtonsContainer}>
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={withSound(() => handleInterrogate(suspect))}
+                {...withSound(() => handleInterrogate(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Interrogar</Text>
@@ -105,7 +105,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={withSound(() => handleHistory(suspect))}
+                {...withSound(() => handleHistory(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Histórico</Text>
@@ -113,7 +113,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={withSound(() => handleAccuse(suspect), 'accusation')}
+                {...withSound(() => handleAccuse(suspect), 'accusation')}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Acusar</Text>
@@ -141,7 +141,7 @@ export default function SuspectsScreen({
 
             <TouchableOpacity
               style={styles.modalCloseButton}
-              onPress={withSound(() => setIsReviewModalVisible(false))}
+              {...withSound(() => setIsReviewModalVisible(false))}
               accessibilityRole="button"
             >
               <Text style={styles.buttonText}>Voltar</Text>
