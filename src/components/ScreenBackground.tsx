@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  ImageBackground,
+  Image,
   ImageSourcePropType,
   StyleProp,
   StyleSheet,
@@ -17,7 +17,10 @@ interface ScreenBackgroundProps {
   children?: React.ReactNode;
 }
 
-/** Fundo de tela com imagem em "cover" e uma camada escura por cima. */
+/**
+ * Fundo de tela com imagem em "cover" e uma camada escura por cima.
+ * Usa View + Image absoluta (o ImageBackground está obsoleto no RN 0.88).
+ */
 export default function ScreenBackground({
   source,
   overlayOpacity = DEFAULT_BACKGROUND_OVERLAY,
@@ -25,14 +28,15 @@ export default function ScreenBackground({
   children,
 }: ScreenBackgroundProps) {
   return (
-    <ImageBackground
-      source={source}
-      resizeMode="cover"
-      style={[styles.fill, style]}
-      // Sem isto a imagem usa a altura original do arquivo (ex.: 1080) e
-      // aparece ampliada/cortada. Força a imagem a ocupar só a tela.
-      imageStyle={styles.image}
-    >
+    <View style={[styles.fill, style]}>
+      <Image
+        source={source}
+        resizeMode="cover"
+        // Largura e altura explícitas: sem elas o Image usa o tamanho
+        // original do arquivo e a imagem aparece ampliada/cortada.
+        style={styles.image}
+        accessibilityIgnoresInvertColors={true}
+      />
       {overlayOpacity > 0 && (
         <View
           pointerEvents="none"
@@ -43,7 +47,7 @@ export default function ScreenBackground({
         />
       )}
       {children}
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -51,8 +55,12 @@ const styles = StyleSheet.create({
   fill: {
     flex: 1,
     width: '100%',
+    overflow: 'hidden',
   },
   image: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     width: '100%',
     height: '100%',
   },

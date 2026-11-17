@@ -97,7 +97,7 @@ imagem padrão (`FALLBACK_AVATAR_ID` / `FALLBACK_SCENE_ID`).
 
 | Componente | Uso |
 | --- | --- |
-| `components/ScreenBackground.tsx` | Imagem de fundo em *cover* com camada escura ajustável (`overlayOpacity`) para o texto ficar legível. |
+| `components/ScreenBackground.tsx` | Imagem de fundo em *cover* com camada escura ajustável (`overlayOpacity`) para o texto ficar legível. Usa `View` + `Image` absoluta, já que o `ImageBackground` está obsoleto no RN 0.88. |
 | `components/SuspectAvatar.tsx` | Foto de ficha policial quadrada, com `size` e rótulo de acessibilidade. |
 
 Exemplo:

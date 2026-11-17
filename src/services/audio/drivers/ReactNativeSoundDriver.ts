@@ -1,3 +1,4 @@
+import { Image } from 'react-native';
 import Sound from 'react-native-sound';
 import { AudioDriver, AudioHandle } from './AudioDriver';
 
@@ -34,6 +35,20 @@ class ReactNativeSoundHandle implements AudioHandle {
   }
 }
 
+/**
+ * A react-native-sound 0.13 só aceita o caminho do arquivo como TEXTO
+ * (o construtor chama filename.startsWith). O require() do Metro devolve um
+ * número, então convertemos com Image.resolveAssetSource:
+ *   - em desenvolvimento: URL http do Metro (o Android toca por streaming)
+ *   - no APK de release (Android): nome do recurso em res/raw,
+ *     ex.: "src_assets_sounds_button_click"
+ *   - no iOS em release: file:// dentro do bundle do app
+ */
+function toSoundPath(source: number): string | null {
+  const resolved = Image.resolveAssetSource(source);
+  return resolved?.uri ?? null;
+}
+
 export class ReactNativeSoundDriver implements AudioDriver {
   readonly name = 'react-native-sound';
 
@@ -44,7 +59,14 @@ export class ReactNativeSoundDriver implements AudioDriver {
 
   load(source: number): Promise<AudioHandle> {
     return new Promise((resolve, reject) => {
-      const sound: Sound = new Sound(source, (error: unknown) => {
+      const path = toSoundPath(source);
+      if (!path) {
+        reject(new Error(`asset de áudio inválido: ${String(source)}`));
+        return;
+      }
+      // basePath '' (e não o callback) de propósito: se o 2º argumento for
+      // uma função, a lib 0.13 monta o caminho errado para arquivos locais.
+      const sound: Sound = new Sound(path, '', (error: unknown) => {
         if (error) {
           reject(error);
           return;

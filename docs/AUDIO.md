@@ -93,7 +93,17 @@ Todos os valores vão de 0 a 1; valores fora disso são ajustados automaticament
 - Há um intervalo mínimo de 60 ms entre duas execuções do mesmo efeito
   (`SFX_COOLDOWN_MS`), para toques repetidos não virarem "metralhadora".
 
-### 3.5 Falhas
+### 3.5 Como o arquivo chega à biblioteca
+
+A `react-native-sound` 0.13 só aceita o caminho do arquivo como texto. O
+driver converte o `require(...)` com `Image.resolveAssetSource`:
+
+- em desenvolvimento, o som vem do Metro por HTTP (por isso é preciso o
+  `npm start` rodando para ouvir os sons);
+- no APK de release, o som é lido de `res/raw`, onde o React Native empacota
+  os arquivos automaticamente.
+
+### 3.6 Falhas
 
 Se um arquivo não carregar, o serviço registra um aviso (só em modo dev) e
 segue sem aquele som. Se a biblioteca nativa não estiver disponível, o app usa o
