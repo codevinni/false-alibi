@@ -157,5 +157,7 @@ if __name__ == '__main__':
     save('accusation.wav', accusation())
     save('victory.wav', victory())
     save('defeat.wav', defeat())
-    save('music_main_theme.wav', main_theme())
+    # music_main_theme já tem trilha definitiva (music_main_theme.mp3);
+    # descomente para gerar de novo o placeholder:
+    # save('music_main_theme.wav', main_theme())
     save('music_investigation.wav', investigation())

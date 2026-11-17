@@ -39,7 +39,7 @@ export const SOUND_EFFECTS: Record<SoundEffectType, SoundAsset> = {
 
 export const MUSIC_TRACKS: Record<MusicTrackType, SoundAsset> = {
   main_theme: {
-    source: require('../../assets/sounds/music_main_theme.wav'),
+    source: require('../../assets/sounds/music_main_theme.mp3'),
     volume: 0.8,
   },
   investigation: {

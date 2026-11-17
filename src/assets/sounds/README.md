@@ -1,6 +1,7 @@
 # Sons do False Alibi
 
-Todos os arquivos desta pasta são **placeholders** gerados por
+A música principal (`music_main_theme.mp3`) é a trilha definitiva do menu.
+Os demais arquivos ainda são **placeholders** gerados por
 `scripts/generate-placeholder-sounds.py` (bipes e arpejos simples).
 
 | Arquivo                   | Uso                                   | Chave no código   |
@@ -10,7 +11,7 @@ Todos os arquivos desta pasta são **placeholders** gerados por
 | `accusation.wav`          | botão "Acusar" na tela de suspeitos   | `accusation`      |
 | `victory.wav`             | tela de resultado — vitória           | `victory`         |
 | `defeat.wav`              | tela de resultado — derrota           | `defeat`          |
-| `music_main_theme.wav`    | música do menu (loop)                 | `main_theme`      |
+| `music_main_theme.mp3`    | música do menu — faixa padrão (loop)  | `main_theme`      |
 | `music_investigation.wav` | música durante a investigação (loop)  | `investigation`   |
 
 ## Como trocar um som
