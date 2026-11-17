@@ -139,10 +139,10 @@ const styles = StyleSheet.create({
     color: '#F5F5F5',
     textAlign: 'center',
   },
+  // Largura e altura fixas (proporção 3:1 do arquivo 1200×400)
   banner: {
-    width: '100%',
-    maxWidth: 360,
-    aspectRatio: 3,
+    width: 330,
+    height: 110,
   },
   accusedRow: {
     flexDirection: 'row',

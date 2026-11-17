@@ -29,6 +29,9 @@ export default function ScreenBackground({
       source={source}
       resizeMode="cover"
       style={[styles.fill, style]}
+      // Sem isto a imagem usa a altura original do arquivo (ex.: 1080) e
+      // aparece ampliada/cortada. Força a imagem a ocupar só a tela.
+      imageStyle={styles.image}
     >
       {overlayOpacity > 0 && (
         <View
@@ -48,5 +51,9 @@ const styles = StyleSheet.create({
   fill: {
     flex: 1,
     width: '100%',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
 });

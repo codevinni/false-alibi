@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { ScreenProps, useNavigation } from '../navigation';
@@ -20,6 +21,16 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
   useBackgroundMusic('main_theme');
   const background = useStaticImage('home_background');
   const detective = useStaticImage('detective');
+
+  // Tamanho do detetive calculado pela altura da tela (imagem é 2:3).
+  // Largura E altura precisam ser explícitas; senão o Image usa o tamanho
+  // original do arquivo (800×1200) e toma metade da tela.
+  const { height: screenHeight } = useWindowDimensions();
+  const detectiveHeight = Math.round(screenHeight * 0.92);
+  const detectiveSize = {
+    height: detectiveHeight,
+    width: Math.round((detectiveHeight * 2) / 3),
+  };
 
   const handlePlay = () => {
     navigation.navigate('BriefingScreen');
@@ -73,7 +84,7 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
 
       <Image
         source={detective}
-        style={styles.detective}
+        style={detectiveSize}
         resizeMode="contain"
         accessibilityIgnoresInvertColors={true}
       />
@@ -96,10 +107,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-  },
-  detective: {
-    height: '92%',
-    aspectRatio: 2 / 3,
   },
   headerContainer: {
     marginBottom: 32,
