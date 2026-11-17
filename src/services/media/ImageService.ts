@@ -70,10 +70,14 @@ export class ImageService
 
   /** Avatar de um suspeito, mesmo que o avatarId esteja ausente/inválido. */
   getAvatarForSuspect = (
-    suspect: Suspect,
+    suspect: Suspect | undefined,
     crimeCase?: CrimeCase,
   ): ImageSourcePropType => {
-    const avatarId = crimeCase
+    if (!suspect) {
+      warn('getAvatarForSuspect chamado sem suspeito; usando o padrão');
+      return SUSPECT_AVATARS[FALLBACK_AVATAR_ID].source;
+    }
+    const avatarId = crimeCase?.suspects
       ? resolveCaseAvatarIds(crimeCase.suspects).get(suspect.id) ??
         resolveSuspectAvatarId(suspect)
       : resolveSuspectAvatarId(suspect);
@@ -81,7 +85,13 @@ export class ImageService
   };
 
   /** Cena do caso: usa sceneImageId ou, se ausente, a cena do tipo do caso. */
-  getSceneForCase = (crimeCase: CrimeCase): ImageSourcePropType => {
+  getSceneForCase = (
+    crimeCase: CrimeCase | undefined,
+  ): ImageSourcePropType => {
+    if (!crimeCase) {
+      warn('getSceneForCase chamado sem caso; usando a cena padrão');
+      return CRIME_SCENE_IMAGES[FALLBACK_SCENE_ID];
+    }
     if (isCrimeSceneId(crimeCase.sceneImageId)) {
       return CRIME_SCENE_IMAGES[crimeCase.sceneImageId];
     }

@@ -15,7 +15,9 @@ export function useStaticImage(key: StaticScreenImage): ImageSourcePropType {
 }
 
 /** Imagem da cena do crime de um caso. */
-export function useCrimeSceneImage(crimeCase: CrimeCase): ImageSourcePropType {
+export function useCrimeSceneImage(
+  crimeCase: CrimeCase | undefined,
+): ImageSourcePropType {
   return useMemo(
     () => imageService.getSceneForCase(crimeCase),
     [crimeCase],
@@ -26,9 +28,9 @@ export function useCrimeSceneImage(crimeCase: CrimeCase): ImageSourcePropType {
  * Avatares de todos os suspeitos do caso, sem repetição.
  * Uso: const getAvatar = useCaseAvatars(crimeCase); getAvatar(suspect)
  */
-export function useCaseAvatars(crimeCase: CrimeCase) {
+export function useCaseAvatars(crimeCase: CrimeCase | undefined) {
   const ids = useMemo(
-    () => resolveCaseAvatarIds(crimeCase.suspects),
+    () => resolveCaseAvatarIds(crimeCase?.suspects ?? []),
     [crimeCase],
   );
   return useMemo(
@@ -45,7 +47,7 @@ export function useCaseAvatars(crimeCase: CrimeCase) {
 
 /** Avatar de um suspeito, consistente com o que aparece no quadro do caso. */
 export function useSuspectAvatar(
-  suspect: Suspect,
+  suspect: Suspect | undefined,
   crimeCase?: CrimeCase,
 ): ImageSourcePropType {
   return useMemo(

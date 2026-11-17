@@ -26,12 +26,12 @@ export default function BriefingScreen({
   const route = routeProp ?? contextRoute;
   const withSound = useSoundHandler();
 
+  const game = route?.params?.game ?? mockGame;
+  const crimeCase = route?.params?.crimeCase ?? game.crimeCase ?? mockCrimeCase;
+
   useBackgroundMusic('investigation');
   useSoundEffectOnMount('new_case');
   const sceneImage = useCrimeSceneImage(crimeCase);
-
-  const game = route?.params?.game ?? mockGame;
-  const crimeCase = route?.params?.crimeCase ?? game.crimeCase ?? mockCrimeCase;
 
   const handleAdvance = () => {
     navigation.navigate('SuspectsScreen', {
