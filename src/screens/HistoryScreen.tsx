@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { mockSuspects } from '../mocks';
+import { useSoundHandler } from '../services/audio';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
 
 export default function HistoryScreen({
@@ -16,6 +17,7 @@ export default function HistoryScreen({
   const contextNav = useNavigation();
   const contextRoute = useRoute<'HistoryScreen'>();
   const navigation = navProp ?? contextNav;
+  const withSound = useSoundHandler();
   const route = routeProp ?? contextRoute;
 
   const suspect = route?.params?.suspect ?? mockSuspects[0];
@@ -63,7 +65,7 @@ export default function HistoryScreen({
         <View style={styles.footerContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={handleGoBack}
+            onPress={withSound(handleGoBack)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Voltar</Text>

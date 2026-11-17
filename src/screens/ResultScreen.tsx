@@ -8,6 +8,11 @@ import {
 } from 'react-native';
 import { mockCrimeCase, mockGameDefeat, mockGameVictory } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
+import {
+  useBackgroundMusic,
+  useSoundEffectOnMount,
+  useSoundHandler,
+} from '../services/audio';
 
 export default function ResultScreen({
   navigation: navProp,
@@ -21,6 +26,12 @@ export default function ResultScreen({
   const resultParam = route?.params?.result;
   const statusParam = route?.params?.status;
   const isVictory = resultParam === 'victory' || statusParam === 'vitoria';
+  const withSound = useSoundHandler();
+
+  // Para a música para destacar o efeito de vitória/derrota
+  useBackgroundMusic(null);
+  // Atraso para não encavalar com o som de acusação da tela anterior
+  useSoundEffectOnMount(isVictory ? 'victory' : 'defeat', 700);
 
   const fallbackGame = isVictory ? mockGameVictory : mockGameDefeat;
   const crimeCase =
@@ -66,7 +77,7 @@ export default function ResultScreen({
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={handleReturnToHome}
+            onPress={withSound(handleReturnToHome)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Voltar ao início</Text>

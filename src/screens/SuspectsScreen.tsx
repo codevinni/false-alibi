@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { mockCrimeCase, mockGame } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
+import { useSoundHandler } from '../services/audio';
 import { Suspect } from '../types';
 
 export default function SuspectsScreen({
@@ -19,6 +20,8 @@ export default function SuspectsScreen({
   const contextRoute = useRoute<'SuspectsScreen'>();
   const navigation = navProp ?? contextNav;
   const route = routeProp ?? contextRoute;
+
+  const withSound = useSoundHandler();
 
   const [isReviewModalVisible, setIsReviewModalVisible] =
     useState<boolean>(false);
@@ -62,7 +65,7 @@ export default function SuspectsScreen({
 
         <TouchableOpacity
           style={styles.reviewButton}
-          onPress={() => setIsReviewModalVisible(true)}
+          onPress={withSound(() => setIsReviewModalVisible(true))}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Revisar caso</Text>
@@ -80,7 +83,7 @@ export default function SuspectsScreen({
             <View style={styles.cardButtonsContainer}>
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleInterrogate(suspect)}
+                onPress={withSound(() => handleInterrogate(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Interrogar</Text>
@@ -88,7 +91,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleHistory(suspect)}
+                onPress={withSound(() => handleHistory(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Histórico</Text>
@@ -96,7 +99,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleAccuse(suspect)}
+                onPress={withSound(() => handleAccuse(suspect), 'accusation')}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Acusar</Text>
@@ -124,7 +127,7 @@ export default function SuspectsScreen({
 
             <TouchableOpacity
               style={styles.modalCloseButton}
-              onPress={() => setIsReviewModalVisible(false)}
+              onPress={withSound(() => setIsReviewModalVisible(false))}
               accessibilityRole="button"
             >
               <Text style={styles.buttonText}>Voltar</Text>

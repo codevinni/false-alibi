@@ -7,10 +7,14 @@ import {
   View,
 } from 'react-native';
 import { ScreenProps, useNavigation } from '../navigation';
+import { useBackgroundMusic, useSoundHandler } from '../services/audio';
 
 export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScreen'>) {
   const contextNav = useNavigation();
   const navigation = navProp ?? contextNav;
+  const withSound = useSoundHandler();
+
+  useBackgroundMusic('main_theme');
 
   const handlePlay = () => {
     navigation.navigate('BriefingScreen');
@@ -33,7 +37,7 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
       <View style={styles.menuContainer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={handlePlay}
+          onPress={withSound(handlePlay)}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Jogar</Text>
@@ -41,7 +45,7 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
 
         <TouchableOpacity
           style={styles.button}
-          onPress={handleSettings}
+          onPress={withSound(handleSettings)}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Configurações</Text>
@@ -49,7 +53,7 @@ export default function HomeScreen({ navigation: navProp }: ScreenProps<'HomeScr
 
         <TouchableOpacity
           style={styles.button}
-          onPress={handleExit}
+          onPress={withSound(handleExit)}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Sair</Text>

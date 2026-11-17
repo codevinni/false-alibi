@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { mockSuspects } from '../mocks';
+import { useSoundHandler } from '../services/audio';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
 
 export default function InterrogationScreen({
@@ -10,6 +11,7 @@ export default function InterrogationScreen({
   const contextNav = useNavigation();
   const contextRoute = useRoute<'InterrogationScreen'>();
   const navigation = navProp ?? contextNav;
+  const withSound = useSoundHandler();
   const route = routeProp ?? contextRoute;
 
   const suspect = route?.params?.suspect ?? mockSuspects[0];
@@ -35,7 +37,7 @@ export default function InterrogationScreen({
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={handleGoBack}
+            onPress={withSound(handleGoBack)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Voltar</Text>

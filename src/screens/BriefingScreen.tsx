@@ -8,6 +8,11 @@ import {
 } from 'react-native';
 import { mockCrimeCase, mockGame } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
+import {
+  useBackgroundMusic,
+  useSoundEffectOnMount,
+  useSoundHandler,
+} from '../services/audio';
 
 export default function BriefingScreen({
   navigation: navProp,
@@ -17,6 +22,10 @@ export default function BriefingScreen({
   const contextRoute = useRoute<'BriefingScreen'>();
   const navigation = navProp ?? contextNav;
   const route = routeProp ?? contextRoute;
+  const withSound = useSoundHandler();
+
+  useBackgroundMusic('investigation');
+  useSoundEffectOnMount('new_case');
 
   const game = route?.params?.game ?? mockGame;
   const crimeCase = route?.params?.crimeCase ?? game.crimeCase ?? mockCrimeCase;
@@ -43,7 +52,7 @@ export default function BriefingScreen({
         <View style={styles.footerContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={handleAdvance}
+            onPress={withSound(handleAdvance)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Avançar</Text>
