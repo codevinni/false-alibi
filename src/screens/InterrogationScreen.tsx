@@ -1,6 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { mockSuspects } from '../mocks';
+import { useSoundHandler } from '../services/audio';
+import { useStaticImage, useSuspectAvatar } from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
+import SuspectAvatar from '../components/SuspectAvatar';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
 
 export default function InterrogationScreen({
@@ -10,9 +14,12 @@ export default function InterrogationScreen({
   const contextNav = useNavigation();
   const contextRoute = useRoute<'InterrogationScreen'>();
   const navigation = navProp ?? contextNav;
+  const withSound = useSoundHandler();
   const route = routeProp ?? contextRoute;
 
   const suspect = route?.params?.suspect ?? mockSuspects[0];
+  const avatar = useSuspectAvatar(suspect, route?.params?.crimeCase);
+  const background = useStaticImage('interrogation_room');
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
@@ -23,11 +30,16 @@ export default function InterrogationScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground
+      source={background}
+      overlayOpacity={0.1}
+      style={styles.container}
+    >
       <View style={styles.contentContainer}>
         <Text style={styles.title}>Sala de Interrogatório</Text>
 
         <View style={styles.suspectBox}>
+          <SuspectAvatar source={avatar} name={suspect.name} size={130} />
           <Text style={styles.suspectLabel}>Suspeito em interrogatório:</Text>
           <Text style={styles.suspectName}>{suspect.name}</Text>
         </View>
@@ -35,14 +47,14 @@ export default function InterrogationScreen({
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={handleGoBack}
+            {...withSound(handleGoBack)}
             accessibilityRole="button"
           >
             <Text style={styles.buttonText}>Voltar</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </ScreenBackground>
   );
 }
 
@@ -50,18 +62,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    // painel à esquerda (sobre o espelho da sala); mesa e luz ficam à vista
+    alignItems: 'flex-start',
     backgroundColor: '#121212',
     padding: 20,
+    paddingLeft: 40,
   },
   contentContainer: {
     width: '100%',
-    maxWidth: 480,
+    maxWidth: 340,
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
-    padding: 24,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
+    padding: 20,
     alignItems: 'center',
     gap: 16,
   },
@@ -74,7 +88,7 @@ const styles = StyleSheet.create({
   suspectBox: {
     width: '100%',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   suspectLabel: {
     fontSize: 14,
