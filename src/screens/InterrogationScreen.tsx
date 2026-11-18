@@ -1,7 +1,40 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { mockSuspects } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
+import { voiceService } from '../services/voice';
+import { Suspect } from '../types';
+
+// recording = o jogador está falando no microfone
+// playing = o suspeito está falando
+type VoiceStatus = 'idle' | 'recording' | 'playing';
+
+const INITIAL_MESSAGE =
+  'Toque em "Falar" para perguntar ou em "Ouvir" para escutar o suspeito.';
+const FALLBACK_ANSWER =
+  'Eu estava em casa naquela noite. Pergunte a qualquer vizinho.';
+
+// Última mensagem do histórico do suspeito de um tipo (pergunta ou resposta)
+function getLastMessage(
+  suspect: Suspect,
+  type: 'pergunta' | 'resposta',
+): string | undefined {
+  const messages =
+    suspect.interrogationHistory?.messages?.filter(
+      message => message.type === type,
+    ) ?? [];
+  return messages[messages.length - 1]?.content;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 export default function InterrogationScreen({
   navigation: navProp,
@@ -14,7 +47,112 @@ export default function InterrogationScreen({
 
   const suspect = route?.params?.suspect ?? mockSuspects[0];
 
+  // Resposta provisória: quando a IA existir, ela substitui este valor
+  const answer = getLastMessage(suspect, 'resposta') ?? FALLBACK_ANSWER;
+
+  const [question, setQuestion] = useState<string>(
+    getLastMessage(suspect, 'pergunta') ?? '',
+  );
+  const [status, setStatus] = useState<VoiceStatus>('idle');
+  const [statusText, setStatusText] = useState<string>(INITIAL_MESSAGE);
+  const [hasError, setHasError] = useState<boolean>(false);
+
+  // Evita atualizar o estado depois que a tela saiu (ex.: voltar ouvindo)
+  const isMounted = useRef<boolean>(true);
+
+  const stopVoice = () => {
+    voiceService.stopSpeaking().catch(() => {});
+    voiceService.stopListening().catch(() => {});
+  };
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      stopVoice();
+    };
+  }, []);
+
+  const showInfo = (text: string) => {
+    setHasError(false);
+    setStatusText(text);
+  };
+
+  const showError = (error: unknown) => {
+    setHasError(true);
+    setStatusText(`Erro: ${getErrorMessage(error)}`);
+  };
+
+  // FALAR: o jogador fala no microfone e a transcrição vira a pergunta
+  const handleSpeak = async () => {
+    if (status === 'recording') {
+      await voiceService.stopListening();
+      return;
+    }
+    if (status !== 'idle') {
+      return;
+    }
+
+    setStatus('recording');
+    showInfo('Ouvindo você... fale agora.');
+
+    try {
+      const text = await voiceService.listen();
+      if (!isMounted.current) {
+        return;
+      }
+      if (text) {
+        setQuestion(text);
+        showInfo('Pergunta registrada. Toque em "Ouvir" para escutar.');
+      } else {
+        showInfo('Não consegui ouvir nada. Tente de novo.');
+      }
+    } catch (error) {
+      if (isMounted.current) {
+        showError(error);
+      }
+    } finally {
+      if (isMounted.current) {
+        setStatus('idle');
+      }
+    }
+  };
+
+  // OUVIR: o jogador escuta o suspeito, com a voz calibrada pelo perfil dele
+  const handleListen = async () => {
+    if (status === 'playing') {
+      await voiceService.stopSpeaking();
+      return;
+    }
+    if (status !== 'idle') {
+      return;
+    }
+
+    setStatus('playing');
+    showInfo(`${suspect.name} está falando...`);
+
+    try {
+      await voiceService.speak(answer, {
+        gender: suspect.gender,
+        personality: suspect.personality,
+        age: suspect.age,
+      });
+      if (isMounted.current) {
+        showInfo('Resposta concluída.');
+      }
+    } catch (error) {
+      if (isMounted.current) {
+        showError(error);
+      }
+    } finally {
+      if (isMounted.current) {
+        setStatus('idle');
+      }
+    }
+  };
+
   const handleGoBack = () => {
+    stopVoice();
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
@@ -22,17 +160,68 @@ export default function InterrogationScreen({
     }
   };
 
+  const isRecording = status === 'recording';
+  const isPlaying = status === 'playing';
+
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>Sala de Interrogatório</Text>
+        <ScrollView
+          style={styles.infoScroll}
+          contentContainerStyle={styles.infoContent}
+        >
+          <Text style={styles.title}>Sala de Interrogatório</Text>
 
-        <View style={styles.suspectBox}>
-          <Text style={styles.suspectLabel}>Suspeito em interrogatório:</Text>
-          <Text style={styles.suspectName}>{suspect.name}</Text>
-        </View>
+          <View style={styles.suspectBox}>
+            <Text style={styles.suspectLabel}>Suspeito em interrogatório:</Text>
+            <Text style={styles.suspectName}>{suspect.name}</Text>
+          </View>
 
-        <View style={styles.actionsContainer}>
+          <View style={styles.messageBox}>
+            <Text style={styles.messageLabel}>PERGUNTA:</Text>
+            <Text style={styles.messageText}>
+              {question || 'Nenhuma pergunta ainda.'}
+            </Text>
+          </View>
+
+          <View style={styles.messageBox}>
+            <Text style={styles.messageLabel}>RESPOSTA:</Text>
+            <Text style={styles.messageText}>{answer}</Text>
+          </View>
+
+          <Text
+            style={[styles.statusText, hasError && styles.statusTextError]}
+            accessibilityLiveRegion="polite"
+          >
+            {statusText}
+          </Text>
+        </ScrollView>
+
+        <View style={styles.actionsColumn}>
+          <TouchableOpacity
+            style={[styles.button, isRecording && styles.buttonDisabled]}
+            onPress={handleListen}
+            disabled={isRecording}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isRecording }}
+          >
+            <Text style={styles.buttonText}>
+              {isPlaying ? 'Parar de ouvir' : 'Ouvir'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, isPlaying && styles.buttonDisabled]}
+            onPress={handleSpeak}
+            disabled={isPlaying}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isPlaying }}
+          >
+            <Text style={styles.buttonText}>
+              {isRecording ? 'Parar de falar' : 'Falar'}
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.button}
             onPress={handleGoBack}
@@ -52,21 +241,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#121212',
-    padding: 20,
+    padding: 16,
   },
   contentContainer: {
     width: '100%',
-    maxWidth: 480,
+    maxWidth: 720,
+    maxHeight: '100%',
+    flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
     backgroundColor: '#1A1A1A',
-    padding: 24,
+    padding: 16,
+    gap: 20,
+  },
+  infoScroll: {
+    flex: 1,
+  },
+  infoContent: {
     alignItems: 'center',
-    gap: 16,
+    gap: 10,
+  },
+  actionsColumn: {
+    width: 200,
+    justifyContent: 'center',
+    gap: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#F5F5F5',
     textAlign: 'center',
@@ -74,23 +276,45 @@ const styles = StyleSheet.create({
   suspectBox: {
     width: '100%',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   suspectLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#AAAAAA',
     textAlign: 'center',
   },
   suspectName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
   },
-  actionsContainer: {
+  messageBox: {
     width: '100%',
-    maxWidth: 220,
-    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#333333',
+    borderRadius: 4,
+    backgroundColor: '#222222',
+    padding: 10,
+    gap: 4,
+  },
+  messageLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#CCCCCC',
+  },
+  statusText: {
+    fontSize: 13,
+    color: '#A5D6A7',
+    textAlign: 'center',
+  },
+  statusTextError: {
+    color: '#EF9A9A',
   },
   button: {
     width: '100%',
@@ -102,6 +326,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#1E1E1E',
+  },
+  buttonDisabled: {
+    opacity: 0.4,
   },
   buttonText: {
     fontSize: 16,
