@@ -9,6 +9,10 @@ import {
 } from 'react-native';
 import { mockCrimeCase, mockGame } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
+import { useSoundHandler } from '../services/audio';
+import { useCaseAvatars, useStaticImage } from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
+import SuspectAvatar from '../components/SuspectAvatar';
 import { Suspect } from '../types';
 
 export default function SuspectsScreen({
@@ -20,11 +24,15 @@ export default function SuspectsScreen({
   const navigation = navProp ?? contextNav;
   const route = routeProp ?? contextRoute;
 
+  const withSound = useSoundHandler();
+
   const [isReviewModalVisible, setIsReviewModalVisible] =
     useState<boolean>(false);
 
   const game = route?.params?.game ?? mockGame;
   const crimeCase = route?.params?.crimeCase ?? game.crimeCase ?? mockCrimeCase;
+  const getAvatar = useCaseAvatars(crimeCase);
+  const background = useStaticImage('home_background');
 
   const handleInterrogate = (suspect: Suspect) => {
     navigation.navigate('InterrogationScreen', {
@@ -56,13 +64,17 @@ export default function SuspectsScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground
+      source={background}
+      overlayOpacity={0.65}
+      style={styles.container}
+    >
       <View style={styles.headerContainer}>
         <Text style={styles.title}>Quadro de Suspeitos</Text>
 
         <TouchableOpacity
           style={styles.reviewButton}
-          onPress={() => setIsReviewModalVisible(true)}
+          {...withSound(() => setIsReviewModalVisible(true))}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Revisar caso</Text>
@@ -75,12 +87,17 @@ export default function SuspectsScreen({
       >
         {crimeCase.suspects.map(suspect => (
           <View key={suspect.id} style={styles.suspectCard}>
+            <SuspectAvatar
+              source={getAvatar(suspect)}
+              name={suspect.name}
+              size={110}
+            />
             <Text style={styles.suspectName}>{suspect.name}</Text>
 
             <View style={styles.cardButtonsContainer}>
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleInterrogate(suspect)}
+                {...withSound(() => handleInterrogate(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Interrogar</Text>
@@ -88,7 +105,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleHistory(suspect)}
+                {...withSound(() => handleHistory(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Histórico</Text>
@@ -96,7 +113,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleAccuse(suspect)}
+                {...withSound(() => handleAccuse(suspect), 'accusation')}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Acusar</Text>
@@ -124,7 +141,7 @@ export default function SuspectsScreen({
 
             <TouchableOpacity
               style={styles.modalCloseButton}
-              onPress={() => setIsReviewModalVisible(false)}
+              {...withSound(() => setIsReviewModalVisible(false))}
               accessibilityRole="button"
             >
               <Text style={styles.buttonText}>Voltar</Text>
@@ -132,7 +149,7 @@ export default function SuspectsScreen({
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenBackground>
   );
 }
 
@@ -181,7 +198,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: 'rgba(26, 26, 26, 0.92)',
     padding: 12,
     alignItems: 'center',
     gap: 10,
