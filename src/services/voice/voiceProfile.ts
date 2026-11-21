@@ -13,7 +13,7 @@ interface VoiceAdjustment {
   rate: number;
 }
 
-// Correção base da voz escolhida (vem do catálogo de vozes)
+// Base da voz escolhida, advinda do catálogo de vozes
 export interface VoiceBase {
   pitchOffset: number;
   rateOffset: number;
@@ -25,13 +25,13 @@ const BASE_RATE = 1.0;
 const PITCH_LIMITS = { min: 0.5, max: 2.0 };
 const RATE_LIMITS = { min: 0.6, max: 1.5 };
 
-// Ajuste de tom por gênero (feminino mais agudo, masculino mais grave)
+// Ajuste de tom por gênero, feminino mais agudo, masculino mais grave
 const GENDER_ADJUSTMENT: Record<SuspectGender, number> = {
   feminino: 0.2,
   masculino: -0.15,
 };
 
-// Ajuste por personalidade (somado ao tom/velocidade base)
+// Ajuste por personalidade, somado ao tom/velocidade base
 const PERSONALITY_ADJUSTMENT: Record<SuspectPersonality, VoiceAdjustment> = {
   calmo: { pitch: 0, rate: -0.25 },
   nervoso: { pitch: 0.15, rate: 0.3 },
@@ -60,10 +60,9 @@ function getAgeAdjustment(age: number): VoiceAdjustment {
 }
 
 /**
- * Converte o perfil do suspeito em tom (pitch) e velocidade (rate) da voz.
- * Se uma voz do catálogo foi escolhida, o gênero já vem do timbre dela;
- * sem voz escolhida, o gênero é simulado ajustando o tom.
- * Função pura: o mesmo perfil sempre gera a mesma voz.
+ * Converte o perfil do suspeito em tom (pitch) e velocidade (rate) da voz
+ * A voz escolhida do catálogo já possui o gênero e timbre, sem voz escolhida, o gênero é simulado ajustando o tom
+ * O mesmo perfil sempre gera a mesma voz
  */
 export function getVoiceParams(
   profile: VoiceProfile,
@@ -85,7 +84,7 @@ export function getVoiceParams(
   };
 }
 
-// Pausa entre frases (ms): dá o ritmo de fala de cada personalidade
+// Pausa entre frases, personalizando o ritmo de fala de cada personalidade
 const PAUSE_MS: Record<SuspectPersonality, number> = {
   calmo: 500,
   nervoso: 150,

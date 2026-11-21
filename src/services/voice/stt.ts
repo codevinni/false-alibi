@@ -1,12 +1,15 @@
 /* Serviço de reconhecimento de fala (voz para texto) */
 
-import { PermissionsAndroid, Platform } from 'react-native';
+import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
 import Voice, {
   SpeechErrorEvent,
   SpeechResultsEvent,
 } from '@react-native-voice/voice';
 
 const LANGUAGE = 'pt-BR';
+
+// Tempo máximo de escuta antes de encerrar sozinho
+const LISTEN_TIMEOUT_MS = 20000;
 
 // Tempo de espera pelo resultado final depois de stopListening()
 const STOP_FALLBACK_MS = 1500;
@@ -105,6 +108,13 @@ export async function requestPermissions(): Promise<boolean> {
  * para de falar. Retorna string vazia se nada foi reconhecido.
  */
 export async function listen(): Promise<string> {
+    // Falha com mensagem clara se o módulo nativo não está no app instalado
+    if (!NativeModules.Voice && !NativeModules.RCTVoice) {
+    throw new Error(
+      'Módulo nativo de voz não encontrado. Reinstale o app (npm run android).',
+    );
+  }
+
   if (!(await requestPermissions())) {
     throw new Error('Permissão de microfone negada');
   }
@@ -124,8 +134,17 @@ export async function listen(): Promise<string> {
 
   lastPartial = '';
 
-  return new Promise<string>((resolve, reject) => {
-    pending = { resolve, reject };
+    return new Promise<string>((resolve, reject) => {
+    const current: PendingListen = { resolve, reject };
+    pending = current;
+
+    // Se nenhum resultado chegar, encerra a escuta
+    setTimeout(() => {
+      if (pending === current) {
+        stopListening();
+      }
+    }, LISTEN_TIMEOUT_MS);
+
     Voice.start(LANGUAGE).catch(error => {
       fail(error instanceof Error ? error : new Error(String(error)));
     });

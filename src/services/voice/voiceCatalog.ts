@@ -10,7 +10,7 @@ type DeviceVoice = Awaited<
   ReturnType<typeof Speech.getAvailableVoices>
 >[number];
 
-// Voz escolhida: id no aparelho + correção do timbre natural dela
+// Voz escolhida, considera o ID no aparelho e a suacorreção do timbre natural
 export interface VoiceChoice {
   identifier: string;
   pitchOffset: number;
@@ -18,14 +18,13 @@ export interface VoiceChoice {
 }
 
 interface CatalogEntry {
-  key: string; // trecho do identificador da voz no aparelho
+  key: string;             // Trecho do identificador da voz no aparelho
   gender: SuspectGender;
-  pitchOffset: number; // ajusta o tom base da voz
-  rateOffset: number; // ajusta a velocidade base da voz
+  pitchOffset: number;    // Ajusta o tom base da voz
+  rateOffset: number;     // Ajusta a velocidade base da voz
 }
 
-// Vozes aprovadas no teste de audição (VoiceLab).
-// Para adicionar uma voz nova, basta incluir uma linha aqui.
+// Vozes aprovadas no teste de audição
 const VOICE_CATALOG: CatalogEntry[] = [
   // Homem por volta dos 30, neutro e levemente grave
   { key: 'ptd-network', gender: 'masculino', pitchOffset: 0, rateOffset: 0 },
@@ -43,15 +42,15 @@ async function loadVoices(): Promise<DeviceVoice[]> {
 }
 
 /**
- * Escolhe uma voz do catálogo para o perfil, ou undefined para usar a voz
- * padrão. A mesma combinação de perfil sempre dá a mesma voz.
+ * Escolhe uma voz do catálogo para o perfil, ou undefined para usar a voz padrão
+ * A mesma combinação de perfil sempre dá a mesma voz
  */
 export async function pickVoice(
   profile: VoiceProfile,
 ): Promise<VoiceChoice | undefined> {
   const deviceVoices = await loadVoices();
 
-  // Só as vozes do gênero que realmente estão instaladas no aparelho
+  // Apenas as vozes do gênero que estão instaladas no aparelho
   const available = VOICE_CATALOG.filter(
     entry => entry.gender === profile.gender,
   ).flatMap(entry => {
@@ -73,6 +72,6 @@ export async function pickVoice(
     return undefined;
   }
 
-    // A idade decide a voz: mesma idade e gênero sempre dão a mesma voz
+    // A idade decide a voz, a mesma combinação de idade e gênero sempre resulta na mesma voz
     return available[profile.age % available.length];
 }

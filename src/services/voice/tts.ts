@@ -7,7 +7,7 @@ import { pickVoice } from './voiceCatalog';
 
 const LANGUAGE = 'pt-BR';
 
-// Tempo máximo de espera pelo fim de cada frase (segurança contra travamento)
+// Tempo máximo de espera pelo fim de cada frase, segurança contra travamento
 const BASE_TIMEOUT_MS = 10000;
 const TIMEOUT_PER_CHAR_MS = 120;
 
@@ -22,13 +22,13 @@ interface SentenceOptions {
   voice?: string;
 }
 
-// Identifica a fala em andamento: stopSpeaking() invalida e o laço para
+// Identifica a fala em andamento
 let currentRun = 0;
 
 const sleep = (ms: number): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, ms));
 
-// Remove marcações que a voz leria em voz alta (ex.: *suspira*)
+// Remove marcações que a voz leria em voz alta 
 function cleanText(text: string): string {
   return text
     .replace(/\*[^*]*\*/g, ' ')
@@ -44,7 +44,7 @@ function splitSentences(text: string): string[] {
 }
 
 /**
- * Fala uma frase e só resolve quando ela termina ou é interrompida.
+ * Fala uma frase e só resolve quando ela termina ou é interrompida
  */
 function speakSentence(
   content: string,
@@ -76,7 +76,7 @@ function speakSentence(
       }
     }
 
-    // Só encerra quando o evento é da fala atual
+    // Apenas encerra quando o evento é da fala atual
     function check() {
       if (currentId === null || !ended.has(currentId)) {
         return;
@@ -88,7 +88,7 @@ function speakSentence(
       );
     }
 
-    // Guarda o evento mesmo que chegue antes de sabermos o id da fala
+    // Guarda o evento mesmo que chegue antes de identificar o id da fala
     function handleEnd(id: string, failed: boolean) {
       ended.set(id, failed);
       check();
@@ -106,8 +106,8 @@ function speakSentence(
 }
 
 /**
- * Fala o texto com a voz, o tom, a velocidade e o ritmo do suspeito.
- * Só resolve quando a fala termina ou é interrompida.
+ * Fala o texto com a voz, o tom, a velocidade e o ritmo do suspeito
+ * Apenas resolve quando a fala termina ou é interrompida
  */
 export async function speak(
   text: string,
@@ -118,7 +118,7 @@ export async function speak(
     return;
   }
 
-  // Marca esta fala como a atual; qualquer fala anterior para sozinha
+  // Marca esta fala como a atual, qualquer fala anterior para sozinha
   const run = ++currentRun;
   await Speech.stop();
 

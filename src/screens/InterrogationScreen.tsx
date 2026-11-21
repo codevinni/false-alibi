@@ -13,32 +13,14 @@ import { useStaticImage, useSuspectAvatar } from '../services/media';
 import { voiceService } from '../services/voice';
 import ScreenBackground from '../components/ScreenBackground';
 import SuspectAvatar from '../components/SuspectAvatar';
-import { Suspect } from '../types';
 
-// recording = o jogador está falando no microfone
-// playing = o suspeito está falando
+/**
+ * idle = parado | recording = jogador falando | playing = suspeito falando
+ */
 type VoiceStatus = 'idle' | 'recording' | 'playing';
 
-const INITIAL_MESSAGE =
-  'Toque em "Falar" para perguntar ou em "Ouvir" para escutar o suspeito.';
-const FALLBACK_ANSWER =
-  'Eu estava em casa naquela noite. Pergunte a qualquer vizinho.';
-
-// Última mensagem do histórico do suspeito de um tipo (pergunta ou resposta)
-function getLastMessage(
-  suspect: Suspect,
-  type: 'pergunta' | 'resposta',
-): string | undefined {
-  const messages =
-    suspect.interrogationHistory?.messages?.filter(
-      message => message.type === type,
-    ) ?? [];
-  return messages[messages.length - 1]?.content;
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
+// Aviso de erro
+type Notice = { text: string; isError: boolean } | null;
 
 export default function InterrogationScreen({
   navigation: navProp,
@@ -53,19 +35,16 @@ export default function InterrogationScreen({
   const suspect = route?.params?.suspect ?? mockSuspects[0];
   const avatar = useSuspectAvatar(suspect, route?.params?.crimeCase);
   const background = useStaticImage('interrogation_room');
+  const messages = suspect.interrogationHistory.messages;
 
-  // Resposta provisória: quando a IA existir, ela substitui este valor
-  const answer = getLastMessage(suspect, 'resposta') ?? FALLBACK_ANSWER;
+  // Os valores vem do histórico
+  const answer = messages.filter(m => m.type === 'resposta').pop()?.content;
 
-  const [question, setQuestion] = useState<string>(
-    getLastMessage(suspect, 'pergunta') ?? '',
+  const [question, setQuestion] = useState(
+    messages.filter(m => m.type === 'pergunta').pop()?.content ?? '',
   );
   const [status, setStatus] = useState<VoiceStatus>('idle');
-  const [statusText, setStatusText] = useState<string>(INITIAL_MESSAGE);
-  const [hasError, setHasError] = useState<boolean>(false);
-
-  // Evita atualizar o estado depois que a tela saiu (ex.: voltar ouvindo)
-  const isMounted = useRef<boolean>(true);
+  const [notice, setNotice] = useState<Notice>(null);
 
   // A música de fundo atrapalha o microfone e a voz do suspeito: ela é
   // pausada enquanto alguém fala e volta ao terminar (ou ao sair da tela).
@@ -91,99 +70,69 @@ export default function InterrogationScreen({
     voiceService.stopListening().catch(() => {});
   };
 
+  // Ao sair da tela: para o áudio ou a gravação e devolve a música
   useEffect(() => {
-    isMounted.current = true;
     return () => {
-      isMounted.current = false;
       stopVoice();
       resumeMusicAfterVoice();
     };
   }, []);
 
-  const showInfo = (text: string) => {
-    setHasError(false);
-    setStatusText(text);
-  };
-
-  const showError = (error: unknown) => {
-    setHasError(true);
-    setStatusText(`Erro: ${getErrorMessage(error)}`);
-  };
-
-  // FALAR: o jogador fala no microfone e a transcrição vira a pergunta
+  // Transcrição da pergunta para texto
   const handleSpeak = async () => {
     if (status === 'recording') {
       await voiceService.stopListening();
       return;
     }
-    if (status !== 'idle') {
-      return;
-    }
 
+    setNotice(null);
     setStatus('recording');
-    showInfo('Ouvindo você... fale agora.');
     pauseMusicForVoice();
 
     try {
       const text = await voiceService.listen();
-      if (!isMounted.current) {
-        return;
-      }
       if (text) {
         setQuestion(text);
-        showInfo('Pergunta registrada. Toque em "Ouvir" para escutar.');
       } else {
-        showInfo('Não consegui ouvir nada. Tente de novo.');
+        setNotice({
+          text: 'Não consegui ouvir nada. Tente de novo.',
+          isError: false,
+        });
       }
     } catch (error) {
-      if (isMounted.current) {
-        showError(error);
-      }
+      setNotice({ text: `Erro: ${String(error)}`, isError: true });
     } finally {
       resumeMusicAfterVoice();
-      if (isMounted.current) {
-        setStatus('idle');
-      }
+      setStatus('idle');
     }
   };
 
-  // OUVIR: o jogador escuta o suspeito, com a voz calibrada pelo perfil dele
+  // Reproduz a resposta do suspeito
   const handleListen = async () => {
     if (status === 'playing') {
       await voiceService.stopSpeaking();
       return;
     }
-    if (status !== 'idle') {
-      return;
-    }
 
+    setNotice(null);
     setStatus('playing');
-    showInfo(`${suspect.name} está falando...`);
     pauseMusicForVoice();
 
     try {
-      await voiceService.speak(answer, {
+      await voiceService.speak(answer ?? '', {
         gender: suspect.gender,
         personality: suspect.personality,
         age: suspect.age,
       });
-      if (isMounted.current) {
-        showInfo('Resposta concluída.');
-      }
     } catch (error) {
-      if (isMounted.current) {
-        showError(error);
-      }
+      setNotice({ text: `Erro: ${String(error)}`, isError: true });
     } finally {
       resumeMusicAfterVoice();
-      if (isMounted.current) {
-        setStatus('idle');
-      }
+      setStatus('idle');
     }
   };
 
   const handleGoBack = () => {
-    stopVoice();
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
@@ -193,6 +142,17 @@ export default function InterrogationScreen({
 
   const isRecording = status === 'recording';
   const isPlaying = status === 'playing';
+
+  // Mensagem de status do áudio ou gravação no fim da tela
+  let statusText =
+    'Toque em "Falar" para perguntar ou em "Ouvir" para escutar o suspeito.';
+  if (isRecording) {
+    statusText = 'Ouvindo você... fale agora.';
+  } else if (isPlaying) {
+    statusText = `${suspect.name} está falando...`;
+  } else if (notice) {
+    statusText = notice.text;
+  }
 
   return (
     <ScreenBackground
@@ -210,7 +170,9 @@ export default function InterrogationScreen({
           <View style={styles.suspectRow}>
             <SuspectAvatar source={avatar} name={suspect.name} size={72} />
             <View style={styles.suspectBox}>
-              <Text style={styles.suspectLabel}>Suspeito em interrogatório:</Text>
+              <Text style={styles.suspectLabel}>
+                Suspeito em interrogatório:
+              </Text>
               <Text style={styles.suspectName}>{suspect.name}</Text>
             </View>
           </View>
@@ -228,8 +190,13 @@ export default function InterrogationScreen({
           </View>
 
           <Text
-            style={[styles.statusText, hasError && styles.statusTextError]}
-            accessibilityLiveRegion="polite"
+            style={[
+              styles.statusText,
+              !isRecording &&
+                !isPlaying &&
+                notice?.isError &&
+                styles.statusTextError,
+            ]}
           >
             {statusText}
           </Text>
@@ -241,7 +208,6 @@ export default function InterrogationScreen({
             {...withSound(handleListen)}
             disabled={isRecording}
             accessibilityRole="button"
-            accessibilityState={{ disabled: isRecording }}
           >
             <Text style={styles.buttonText}>
               {isPlaying ? 'Parar de ouvir' : 'Ouvir'}
@@ -253,7 +219,6 @@ export default function InterrogationScreen({
             {...withSound(handleSpeak)}
             disabled={isPlaying}
             accessibilityRole="button"
-            accessibilityState={{ disabled: isPlaying }}
           >
             <Text style={styles.buttonText}>
               {isRecording ? 'Parar de falar' : 'Falar'}
