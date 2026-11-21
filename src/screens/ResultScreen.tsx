@@ -1,13 +1,23 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { mockCrimeCase, mockGameDefeat, mockGameVictory } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
+import {
+  useBackgroundMusic,
+  useSoundEffectOnMount,
+  useSoundHandler,
+} from '../services/audio';
+import { useStaticImage, useSuspectAvatar } from '../services/media';
+import SuspectAvatar from '../components/SuspectAvatar';
 
 export default function ResultScreen({
   navigation: navProp,
@@ -21,16 +31,48 @@ export default function ResultScreen({
   const resultParam = route?.params?.result;
   const statusParam = route?.params?.status;
   const isVictory = resultParam === 'victory' || statusParam === 'vitoria';
+  const withSound = useSoundHandler();
+
+  // Para a música para destacar o efeito de vitória/derrota
+  useBackgroundMusic(null);
+  // Atraso para não encavalar com o som de acusação da tela anterior
+  useSoundEffectOnMount(isVictory ? 'victory' : 'defeat', 700);
 
   const fallbackGame = isVictory ? mockGameVictory : mockGameDefeat;
   const crimeCase =
     route?.params?.crimeCase ?? fallbackGame.crimeCase ?? mockCrimeCase;
   const accusedSuspect = route?.params?.accusedSuspect;
 
-  const resultBadgeText = isVictory ? 'VITÓRIA' : 'DERROTA';
+  const banner = useStaticImage(isVictory ? 'victory_banner' : 'defeat_banner');
+  const accusedAvatar = useSuspectAvatar(
+    accusedSuspect ?? crimeCase.culprit,
+    crimeCase,
+  );
+
+  // Textos do painel da direita (os banners novos não trazem texto)
+  const titleText = isVictory ? 'CASO SOLUCIONADO!' : 'DERROTA!';
+  const stampText = isVictory ? 'INVESTIGAÇÃO CONCLUÍDA' : 'CASO ARQUIVADO';
   const feedbackMessage = isVictory
-    ? 'Parabéns, detetive! O caso foi solucionado com sucesso.'
-    : 'Investigação encerrada em derrota. O verdadeiro culpado escapou.';
+    ? 'A verdade sempre deixa rastros. Você soube encontrá-los e ' +
+      'desmascarou o verdadeiro culpado. Um trabalho digno de um grande ' +
+      'detetive!'
+    : 'As evidências não bateram. O caso continua em aberto e o culpado ' +
+      'ainda está livre.';
+
+  // O banner cobre a tela inteira, como imagem de fundo em "cover".
+  // A arte fica na metade esquerda; a direita é fundo escuro, onde ficam o
+  // texto, o resumo e o botão. Os arquivos já vêm no formato de tela de
+  // celular (2,2:1), com o fundo estendido em cima e embaixo.
+  // Largura E altura explícitas (senão o Image usa o tamanho do arquivo).
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const bannerSize = useMemo(() => {
+    const asset = Image.resolveAssetSource(banner);
+    const aspect =
+      asset?.width && asset?.height ? asset.width / asset.height : 2.2;
+    const width = Math.max(screenWidth, screenHeight * aspect);
+    return { width: Math.round(width), height: Math.round(width / aspect) };
+  }, [banner, screenWidth, screenHeight]);
 
   const handleReturnToHome = () => {
     navigation.reset('HomeScreen');
@@ -38,130 +80,209 @@ export default function ResultScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.cardContainer}>
-        <Text
-          style={[
-            styles.resultBadge,
-            isVictory ? styles.victoryText : styles.defeatText,
-          ]}
+      <Image
+        source={banner}
+        resizeMode="cover"
+        style={[
+          styles.banner,
+          bannerSize,
+          {
+            left: (screenWidth - bannerSize.width) / 2,
+            top: (screenHeight - bannerSize.height) / 2,
+          },
+        ]}
+        accessibilityIgnoresInvertColors={true}
+      />
+
+      {/* Metade direita: resultado, resumo e botão */}
+      <View
+        style={[
+          styles.panel,
+          {
+            paddingTop: 12 + insets.top,
+            paddingBottom: 12 + insets.bottom,
+            marginRight: insets.right,
+          },
+        ]}
+      >
+        <View
+          style={styles.iconRow}
+          accessible={true}
+          accessibilityLabel={`${titleText} ${stampText}. ${feedbackMessage}`}
         >
-          {resultBadgeText}
-        </Text>
+          <View style={styles.iconLine} />
+          <View style={styles.iconCircle}>
+            <Text style={styles.iconText}>{isVictory ? '✓' : '✕'}</Text>
+          </View>
+          <View style={styles.iconLine} />
+        </View>
 
-        <Text style={styles.feedbackText}>{feedbackMessage}</Text>
-
-        {accusedSuspect && (
-          <Text style={styles.accusedText}>
-            Suspeito acusado: {accusedSuspect.name}
-          </Text>
-        )}
+        <Text style={styles.title}>{titleText}</Text>
+        <View style={styles.stamp}>
+          <Text style={styles.stampText}>{stampText}</Text>
+        </View>
+        <Text style={styles.message}>{feedbackMessage}</Text>
 
         <View style={styles.solutionContainer}>
+          {accusedSuspect && (
+            <View style={styles.accusedRow}>
+              <SuspectAvatar
+                source={accusedAvatar}
+                name={accusedSuspect.name}
+                size={28}
+              />
+              <Text style={styles.accusedText} numberOfLines={1}>
+                Suspeito acusado: {accusedSuspect.name}
+              </Text>
+            </View>
+          )}
           <Text style={styles.solutionTitle}>Resumo da Solução:</Text>
           <ScrollView style={styles.solutionScroll}>
             <Text style={styles.solutionText}>{crimeCase.summarySolution}</Text>
           </ScrollView>
         </View>
 
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleReturnToHome}
-            accessibilityRole="button"
-          >
-            <Text style={styles.buttonText}>Voltar ao início</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.button}
+          {...withSound(handleReturnToHome)}
+          accessibilityRole="button"
+        >
+          <Text style={styles.buttonText}>Voltar ao início</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+const RED = '#B3202E';
+const PAPER = '#EDE7DC';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    overflow: 'hidden',
+    // mesmo tom do fundo escuro dos banners
+    backgroundColor: '#040A0E',
+  },
+  banner: {
+    position: 'absolute',
+  },
+  // Coluna na metade direita, onde o banner é só fundo escuro
+  panel: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: '57%',
+    right: '3%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',
-    padding: 16,
+    gap: 8,
   },
-  cardContainer: {
-    width: '100%',
-    maxWidth: 620,
-    maxHeight: '100%',
-    borderWidth: 1,
-    borderColor: '#444444',
-    borderRadius: 6,
-    backgroundColor: '#1A1A1A',
-    padding: 20,
+  iconRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
-  resultBadge: {
-    fontSize: 28,
+  iconLine: {
+    width: 48,
+    height: 2,
+    backgroundColor: RED,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: RED,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconText: {
+    fontSize: 22,
     fontWeight: 'bold',
-    letterSpacing: 1.5,
+    color: '#FFFFFF',
+  },
+  title: {
+    fontFamily: 'monospace',
+    fontSize: 22,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    color: PAPER,
     textAlign: 'center',
   },
-  victoryText: {
-    color: '#A5D6A7',
+  // Carimbo vermelho levemente torto, como nos banners antigos
+  stamp: {
+    borderWidth: 2,
+    borderColor: RED,
+    borderRadius: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    transform: [{ rotate: '-2deg' }],
   },
-  defeatText: {
-    color: '#EF9A9A',
+  stampText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    color: RED,
   },
-  feedbackText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#F5F5F5',
+  message: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#CFC8BD',
     textAlign: 'center',
   },
-  accusedText: {
-    fontSize: 14,
-    color: '#BBBBBB',
-    textAlign: 'center',
-  },
+  // Encolhe em telas baixas; o texto longo rola
   solutionContainer: {
-    width: '100%',
+    alignSelf: 'stretch',
+    flexShrink: 1,
+    minHeight: 64,
+    maxHeight: 120,
     borderWidth: 1,
-    borderColor: '#333333',
-    borderRadius: 4,
-    backgroundColor: '#222222',
-    padding: 12,
+    borderColor: '#3A3A3A',
+    borderRadius: 6,
+    backgroundColor: 'rgba(18, 18, 18, 0.9)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    gap: 3,
+  },
+  accusedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
+  accusedText: {
+    flexShrink: 1,
+    fontSize: 12,
+    color: '#BBBBBB',
+  },
   solutionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#E0E0E0',
-    textAlign: 'center',
   },
   solutionScroll: {
-    maxHeight: 110,
+    flexGrow: 0,
+    flexShrink: 1,
   },
   solutionText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 17,
     color: '#DDDDDD',
-    textAlign: 'center',
   },
-  actionsContainer: {
-    width: '100%',
-    maxWidth: 240,
-    marginTop: 4,
-  },
+  // Mesmo tamanho do botão "Revisar caso" da tela de suspeitos
   button: {
-    width: '100%',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: 'rgba(30, 30, 30, 0.95)',
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
   },

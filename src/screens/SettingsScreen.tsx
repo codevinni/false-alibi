@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import {
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import AudioSettingsPanel from '../components/AudioSettingsPanel';
 import { ScreenProps, useNavigation } from '../navigation';
+import { audioService } from '../services/audio';
 
 // Limitação atual: Como o projeto não possui biblioteca de armazenamento persistente instalada
 // (ex.: AsyncStorage ou MMKV), a chave de API é mantida apenas em estado local / memória durante a execução.
 let sessionApiKey = '';
+
+const playClick = () => audioService.playSoundEffect('button_click');
 
 export default function SettingsScreen({
   navigation: navProp,
@@ -41,7 +46,10 @@ export default function SettingsScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.container}
+    >
       <View style={styles.headerContainer}>
         <Text style={styles.title}>Configurações</Text>
       </View>
@@ -73,9 +81,13 @@ export default function SettingsScreen({
           </Text>
         )}
 
+        <View style={styles.divider} />
+        <AudioSettingsPanel />
+
         <View style={styles.buttonsRow}>
           <TouchableOpacity
             style={styles.button}
+            onPressIn={playClick}
             onPress={handleGoBack}
             accessibilityRole="button"
           >
@@ -84,6 +96,7 @@ export default function SettingsScreen({
 
           <TouchableOpacity
             style={styles.button}
+            onPressIn={playClick}
             onPress={handleSaveApiKey}
             accessibilityRole="button"
           >
@@ -91,13 +104,17 @@ export default function SettingsScreen({
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
+    backgroundColor: '#121212',
+  },
+  container: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#121212',
@@ -142,6 +159,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#A5D6A7',
     textAlign: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#333333',
+    marginVertical: 4,
   },
   buttonsRow: {
     flexDirection: 'row',
