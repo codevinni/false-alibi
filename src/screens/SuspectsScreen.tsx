@@ -5,11 +5,22 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { mockCrimeCase, mockGame } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
+import { useSoundHandler } from '../services/audio';
+import { useCaseAvatars, useStaticImage } from '../services/media';
+import ScreenBackground from '../components/ScreenBackground';
+import SuspectAvatar from '../components/SuspectAvatar';
 import { Suspect } from '../types';
+
+// Margem lateral da tela (deve bater com paddingHorizontal do container)
+const SCREEN_PADDING_RATIO = 0.07;
+const CARD_GAP = 10;
+const MIN_CARD_WIDTH = 110;
+const MAX_CARD_WIDTH = 150;
 
 export default function SuspectsScreen({
   navigation: navProp,
@@ -20,11 +31,30 @@ export default function SuspectsScreen({
   const navigation = navProp ?? contextNav;
   const route = routeProp ?? contextRoute;
 
+  const withSound = useSoundHandler();
+
   const [isReviewModalVisible, setIsReviewModalVisible] =
     useState<boolean>(false);
 
   const game = route?.params?.game ?? mockGame;
   const crimeCase = route?.params?.crimeCase ?? game.crimeCase ?? mockCrimeCase;
+  const getAvatar = useCaseAvatars(crimeCase);
+  const background = useStaticImage('suspects_background');
+
+  // Todos os suspeitos numa fileira só: a largura de cada card é dividida
+  // pelo espaço disponível (entre as margens de 7% da tela), de 110 a 150.
+  // Se não couberem nem com 110, a fileira rola na horizontal.
+  const { width: screenWidth } = useWindowDimensions();
+  const suspectCount = Math.max(crimeCase.suspects.length, 1);
+  const rowWidth = screenWidth * (1 - 2 * SCREEN_PADDING_RATIO);
+  const cardWidth = Math.max(
+    MIN_CARD_WIDTH,
+    Math.min(
+      MAX_CARD_WIDTH,
+      (rowWidth - CARD_GAP * (suspectCount - 1)) / suspectCount,
+    ),
+  );
+  const avatarSize = Math.round(Math.min(84, cardWidth - 24));
 
   const handleInterrogate = (suspect: Suspect) => {
     navigation.navigate('InterrogationScreen', {
@@ -56,13 +86,17 @@ export default function SuspectsScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground
+      source={background}
+      overlayOpacity={0.1}
+      style={styles.container}
+    >
       <View style={styles.headerContainer}>
         <Text style={styles.title}>Quadro de Suspeitos</Text>
 
         <TouchableOpacity
           style={styles.reviewButton}
-          onPress={() => setIsReviewModalVisible(true)}
+          {...withSound(() => setIsReviewModalVisible(true))}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Revisar caso</Text>
@@ -70,17 +104,34 @@ export default function SuspectsScreen({
       </View>
 
       <ScrollView
+        horizontal={true}
         style={styles.suspectsScroll}
-        contentContainerStyle={styles.suspectsGrid}
+        contentContainerStyle={styles.suspectsRow}
+        showsHorizontalScrollIndicator={false}
       >
         {crimeCase.suspects.map(suspect => (
-          <View key={suspect.id} style={styles.suspectCard}>
-            <Text style={styles.suspectName}>{suspect.name}</Text>
+          <View
+            key={suspect.id}
+            style={[styles.suspectCard, { width: cardWidth }]}
+          >
+            <SuspectAvatar
+              source={getAvatar(suspect)}
+              name={suspect.name}
+              size={avatarSize}
+            />
+            <Text
+              style={styles.suspectName}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.75}
+            >
+              {suspect.name}
+            </Text>
 
             <View style={styles.cardButtonsContainer}>
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleInterrogate(suspect)}
+                {...withSound(() => handleInterrogate(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Interrogar</Text>
@@ -88,7 +139,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleHistory(suspect)}
+                {...withSound(() => handleHistory(suspect))}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Histórico</Text>
@@ -96,7 +147,7 @@ export default function SuspectsScreen({
 
               <TouchableOpacity
                 style={styles.cardButton}
-                onPress={() => handleAccuse(suspect)}
+                {...withSound(() => handleAccuse(suspect), 'accusation')}
                 accessibilityRole="button"
               >
                 <Text style={styles.cardButtonText}>Acusar</Text>
@@ -124,7 +175,7 @@ export default function SuspectsScreen({
 
             <TouchableOpacity
               style={styles.modalCloseButton}
-              onPress={() => setIsReviewModalVisible(false)}
+              {...withSound(() => setIsReviewModalVisible(false))}
               accessibilityRole="button"
             >
               <Text style={styles.buttonText}>Voltar</Text>
@@ -132,27 +183,34 @@ export default function SuspectsScreen({
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  // Margens para o conteúdo ficar dentro da moldura do quadro de cortiça
   container: {
     flex: 1,
     backgroundColor: '#121212',
-    padding: 16,
+    paddingHorizontal: '7%',
+    paddingTop: '3%',
+    paddingBottom: '3%',
   },
   headerContainer: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 8,
+    // afasta o título da luminária no canto superior esquerdo
+    paddingLeft: '10%',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#F5F5F5',
+    textShadowColor: '#000000',
+    textShadowRadius: 6,
   },
   reviewButton: {
     paddingVertical: 8,
@@ -168,37 +226,38 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
-  suspectsGrid: {
+  // Fileira única, centralizada quando sobra espaço
+  suspectsRow: {
+    flexGrow: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
+    gap: CARD_GAP,
+    paddingVertical: 4,
   },
   suspectCard: {
-    width: 150,
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
-    padding: 12,
+    backgroundColor: 'rgba(26, 26, 26, 0.92)',
+    padding: 10,
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
   },
   suspectName: {
-    fontSize: 15,
+    alignSelf: 'stretch',
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
   },
   cardButtonsContainer: {
     width: '100%',
-    gap: 8,
+    gap: 6,
   },
   cardButton: {
     width: '100%',
-    paddingVertical: 7,
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: '#E0E0E0',
