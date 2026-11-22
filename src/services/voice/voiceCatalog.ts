@@ -1,8 +1,8 @@
-/* Escolhe uma das vozes boas instaladas no aparelho para cada perfil */
+/* Catálogo das vozes boas para os suspeitos e quais delas estão no aparelho */
 
 import Speech from '@mhpdev/react-native-speech';
 import { SuspectGender } from '../../types/suspect.types';
-import { VoiceProfile } from '../../types/voice.services.types';
+import { VoiceBase } from './voiceProfile';
 
 const LANGUAGE = 'pt-BR';
 
@@ -10,51 +10,49 @@ type DeviceVoice = Awaited<
   ReturnType<typeof Speech.getAvailableVoices>
 >[number];
 
-// Voz escolhida: id no aparelho + correção do timbre natural dela
-export interface VoiceChoice {
+// Voz do catálogo instalada no aparelho, com a correção do seu timbre natural
+export interface InstalledVoice extends VoiceBase {
   identifier: string;
-  pitchOffset: number;
-  rateOffset: number;
-}
-
-interface CatalogEntry {
-  key: string; // trecho do identificador da voz no aparelho
   gender: SuspectGender;
-  pitchOffset: number; // ajusta o tom base da voz
-  rateOffset: number; // ajusta a velocidade base da voz
 }
 
-// Vozes aprovadas no teste de audição (VoiceLab).
-// Para adicionar uma voz nova, basta incluir uma linha aqui.
-const VOICE_CATALOG: CatalogEntry[] = [
-  // Homem por volta dos 30, neutro e levemente grave
-  { key: 'ptd-network', gender: 'masculino', pitchOffset: 0, rateOffset: 0 },
-  // Soa adolescente: o tom é abaixado para parecer adulta
-  { key: 'pte-network', gender: 'feminino', pitchOffset: -0.15, rateOffset: 0 },
-];
-
-let cachedVoices: DeviceVoice[] | null = null;
-
-async function loadVoices(): Promise<DeviceVoice[]> {
-  if (!cachedVoices) {
-    cachedVoices = await Speech.getAvailableVoices(LANGUAGE);
-  }
-  return cachedVoices;
+interface CatalogEntry extends VoiceBase {
+  key: string;             // Trecho do identificador da voz no aparelho
+  gender: SuspectGender;
 }
 
 /**
- * Escolhe uma voz do catálogo para o perfil, ou undefined para usar a voz
- * padrão. A mesma combinação de perfil sempre dá a mesma voz.
+ * Vozes aprovadas no teste de audição (VoiceLab)
+ * Cada voz nova aqui aumenta muito a diferença entre os suspeitos: com uma
+ * só voz por gênero, a distinção vem apenas do tom, velocidade e ritmo
  */
-export async function pickVoice(
-  profile: VoiceProfile,
-): Promise<VoiceChoice | undefined> {
-  const deviceVoices = await loadVoices();
+const VOICE_CATALOG: CatalogEntry[] = [
+  // Voz masculina com timbre adulto, neutro, boa dicção
+  { key: 'ptd-local', gender: 'masculino', pitchOffset: -0.05, rateOffset: 0.05 },
+  // Voz feminina com timbre adulto, neutro, boa dicção
+  { key: 'pte-local', gender: 'feminino', pitchOffset: -0.08, rateOffset: 0.05 },
+];
 
-  // Só as vozes do gênero que realmente estão instaladas no aparelho
-  const available = VOICE_CATALOG.filter(
-    entry => entry.gender === profile.gender,
-  ).flatMap(entry => {
+let cachedVoices: InstalledVoice[] | null = null;
+
+/**
+ * Vozes do catálogo instaladas no aparelho, na ordem do catálogo
+ * Lista vazia significa usar a voz padrão do sistema
+ */
+export async function getInstalledVoices(): Promise<InstalledVoice[]> {
+  if (cachedVoices) {
+    return cachedVoices;
+  }
+
+  let deviceVoices: DeviceVoice[];
+  try {
+    deviceVoices = await Speech.getAvailableVoices(LANGUAGE);
+  } catch {
+    // Sem cache: tenta de novo na próxima fala
+    return [];
+  }
+
+  cachedVoices = VOICE_CATALOG.flatMap(entry => {
     const installed = deviceVoices.find(voice =>
       voice.identifier.includes(entry.key),
     );
@@ -62,17 +60,12 @@ export async function pickVoice(
       ? [
           {
             identifier: installed.identifier,
+            gender: entry.gender,
             pitchOffset: entry.pitchOffset,
             rateOffset: entry.rateOffset,
           },
         ]
       : [];
   });
-
-  if (available.length === 0) {
-    return undefined;
-  }
-
-    // A idade decide a voz: mesma idade e gênero sempre dão a mesma voz
-    return available[profile.age % available.length];
+  return cachedVoices;
 }

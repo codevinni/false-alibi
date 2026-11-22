@@ -74,7 +74,7 @@ export default function SuspectsScreen({
 
   const handleAccuse = (suspect: Suspect) => {
     const isCulprit =
-      suspect.id === crimeCase.culprit.id || suspect.isGuilty === true;
+      suspect.id === crimeCase.culprit?.id || suspect.isGuilty === true;
 
     navigation.navigate('ResultScreen', {
       result: isCulprit ? 'victory' : 'defeat',

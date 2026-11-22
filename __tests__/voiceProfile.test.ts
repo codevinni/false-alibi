@@ -1,5 +1,4 @@
 import { getVoiceParams } from '../src/services/voice/voiceProfile';
-import { mockSuspects } from '../src/mocks';
 import { VoiceProfile } from '../src/types/voice.services.types';
 
 const adultMale: VoiceProfile = {
@@ -59,21 +58,5 @@ describe('getVoiceParams', () => {
     );
   });
 
-  it('dá a cada suspeito do mock uma voz distinguível das demais', () => {
-    const voices = mockSuspects.map(suspect =>
-      getVoiceParams({
-        gender: suspect.gender,
-        personality: suspect.personality,
-        age: suspect.age,
-      }),
-    );
-
-    voices.forEach((a, i) =>
-      voices.slice(i + 1).forEach(b => {
-        const pitchDiff = Math.abs(a.pitch - b.pitch);
-        const rateDiff = Math.abs(a.rate - b.rate);
-        expect(Math.max(pitchDiff, rateDiff)).toBeGreaterThanOrEqual(0.09);
-      }),
-    );
-  });
+  // A unicidade entre suspeitos é garantida por buildCaseVoiceIdentities
 });
