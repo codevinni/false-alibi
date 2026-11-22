@@ -1,21 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+import { 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View, 
 } from 'react-native';
 import { mockSuspects } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
 import { audioService, useSoundHandler } from '../services/audio';
 import { useStaticImage, useSuspectAvatar } from '../services/media';
-import { voiceService } from '../services/voice';
+import { getMessageEmotionalState, voiceService } from '../services/voice';
+import { Message } from '../types/interrogation.types';
 import ScreenBackground from '../components/ScreenBackground';
 import SuspectAvatar from '../components/SuspectAvatar';
 
 /**
- * idle = parado | recording = jogador falando | playing = suspeito falando
+ * Status da voz
+ * idle = parado, ninguém está falando
+ * recording = jogador falando 
+ * playing = suspeito falando
  */
 type VoiceStatus = 'idle' | 'recording' | 'playing';
 
@@ -35,19 +39,29 @@ export default function InterrogationScreen({
   const suspect = route?.params?.suspect ?? mockSuspects[0];
   const avatar = useSuspectAvatar(suspect, route?.params?.crimeCase);
   const background = useStaticImage('interrogation_room');
-  const messages = suspect.interrogationHistory.messages;
-
-  // Os valores vem do histórico
-  const answer = messages.filter(m => m.type === 'resposta').pop()?.content;
-
-  const [question, setQuestion] = useState(
-    messages.filter(m => m.type === 'pergunta').pop()?.content ?? '',
+  
+  // Exibe a conversa na tela, novas conversas são inseridas no fim da lista
+  const [messages, setMessages] = useState<Message[]>(
+    () => suspect.interrogationHistory?.messages ?? [],
   );
+
+  // "Ouvir" reproduz a última resposta do suspeito
+  const answerIndex = messages.map(m => m.type).lastIndexOf('resposta');
+  const answer = answerIndex >= 0 ? messages[answerIndex] : undefined;
+
+  // Reserva uma voz distinta para cada suspeito do caso
+  const caseSuspects = route?.params?.crimeCase?.suspects ?? mockSuspects;
+  useEffect(() => {
+    voiceService.prepareVoices(caseSuspects).catch(() => {});
+  }, [caseSuspects]);
+
+  // Rola até a mensagem mais recente
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+
   const [status, setStatus] = useState<VoiceStatus>('idle');
   const [notice, setNotice] = useState<Notice>(null);
 
-  // A música de fundo atrapalha o microfone e a voz do suspeito: ela é
-  // pausada enquanto alguém fala e volta ao terminar (ou ao sair da tela).
+  // Pausa a música de fundo para ouvir ou falar e volta ao terminar 
   const musicPausedForVoice = useRef<boolean>(false);
 
   const pauseMusicForVoice = () => {
@@ -70,7 +84,7 @@ export default function InterrogationScreen({
     voiceService.stopListening().catch(() => {});
   };
 
-  // Ao sair da tela: para o áudio ou a gravação e devolve a música
+  // Pausa o áudio ou a gravação e retoma a música
   useEffect(() => {
     return () => {
       stopVoice();
@@ -92,10 +106,10 @@ export default function InterrogationScreen({
     try {
       const text = await voiceService.listen();
       if (text) {
-        setQuestion(text);
+        setMessages(prev => [...prev, { type: 'pergunta', content: text }]);
       } else {
         setNotice({
-          text: 'Não consegui ouvir nada. Tente de novo.',
+          text: 'Não consegui ouvir, tente de novo',
           isError: false,
         });
       }
@@ -119,10 +133,24 @@ export default function InterrogationScreen({
     pauseMusicForVoice();
 
     try {
-      await voiceService.speak(answer ?? '', {
+      if (!answer) {
+        return;
+      }
+      // Quanto mais perguntas antes da resposta, mais pressionado o suspeito
+      const pressure = messages
+        .slice(0, answerIndex)
+        .filter(m => m.type === 'pergunta').length;
+
+      await voiceService.speak(answer.content, {
+        id: suspect.id,
         gender: suspect.gender,
         personality: suspect.personality,
         age: suspect.age,
+        emotionalState: getMessageEmotionalState(
+          answer,
+          suspect.personality,
+          pressure,
+        ),
       });
     } catch (error) {
       setNotice({ text: `Erro: ${String(error)}`, isError: true });
@@ -145,9 +173,9 @@ export default function InterrogationScreen({
 
   // Mensagem de status do áudio ou gravação no fim da tela
   let statusText =
-    'Toque em "Falar" para perguntar ou em "Ouvir" para escutar o suspeito.';
+    'Toque em "Falar" para perguntar ou em "Ouvir" para escutar o suspeito';
   if (isRecording) {
-    statusText = 'Ouvindo você... fale agora.';
+    statusText = 'Ouvindo você... fale agora';
   } else if (isPlaying) {
     statusText = `${suspect.name} está falando...`;
   } else if (notice) {
@@ -162,8 +190,12 @@ export default function InterrogationScreen({
     >
       <View style={styles.contentContainer}>
         <ScrollView
+          ref={scrollRef}
           style={styles.infoScroll}
           contentContainerStyle={styles.infoContent}
+          onContentSizeChange={() =>
+            scrollRef.current?.scrollToEnd({ animated: true })
+          }
         >
           <Text style={styles.title}>Sala de Interrogatório</Text>
 
@@ -177,17 +209,20 @@ export default function InterrogationScreen({
             </View>
           </View>
 
-          <View style={styles.messageBox}>
-            <Text style={styles.messageLabel}>PERGUNTA:</Text>
-            <Text style={styles.messageText}>
-              {question || 'Nenhuma pergunta ainda.'}
-            </Text>
-          </View>
-
-          <View style={styles.messageBox}>
-            <Text style={styles.messageLabel}>RESPOSTA:</Text>
-            <Text style={styles.messageText}>{answer}</Text>
-          </View>
+          {messages.length === 0 ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.messageText}>Nenhuma pergunta ainda.</Text>
+            </View>
+          ) : (
+            messages.map((message, index) => (
+              <View key={`${index}-${message.type}`} style={styles.messageBox}>
+                <Text style={styles.messageLabel}>
+                  {message.type === 'pergunta' ? 'PERGUNTA:' : 'RESPOSTA:'}
+                </Text>
+                <Text style={styles.messageText}>{message.content}</Text>
+              </View>
+            ))
+          )}
 
           <Text
             style={[
@@ -254,7 +289,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#444444',
     borderRadius: 6,
-    // translúcido para a sala de interrogatório aparecer atrás
     backgroundColor: 'rgba(20, 20, 20, 0.86)',
     padding: 16,
     gap: 20,
@@ -319,7 +353,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 13,
-    color: '#A5D6A7',
+    color: '#AAAAAA',
     textAlign: 'center',
   },
   statusTextError: {
