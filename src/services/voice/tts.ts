@@ -2,7 +2,7 @@
 
 import Speech from '@mhpdev/react-native-speech';
 import { VoiceProfile, VoiceSubject } from '../../types/voice.services.types';
-import { getInstalledVoices } from './voiceCatalog';
+import { InstalledVoice, VOICE_CATALOG } from './voiceConfig';
 import { inferEmotionalState, planProsody, SentenceProsody } from './voiceEmotion';
 import {
   buildCaseVoiceIdentities,
@@ -37,6 +37,34 @@ let preparing: Promise<void> | null = null;
 
 const sleep = (ms: number): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, ms));
+
+let cachedVoices: InstalledVoice[] | null = null;
+
+/**
+ * Vozes do catálogo instaladas no aparelho, na ordem do catálogo
+ * Lista vazia significa usar a voz padrão do sistema
+ */
+async function getInstalledVoices(): Promise<InstalledVoice[]> {
+  if (cachedVoices) {
+    return cachedVoices;
+  }
+
+  let deviceVoices: { identifier: string }[];
+  try {
+    deviceVoices = await Speech.getAvailableVoices(LANGUAGE);
+  } catch {
+    // Sem cache: tenta de novo na próxima fala
+    return [];
+  }
+
+  cachedVoices = VOICE_CATALOG.flatMap(entry => {
+    const installed = deviceVoices.find(voice =>
+      voice.identifier.includes(entry.key),
+    );
+    return installed ? [{ ...entry, identifier: installed.identifier }] : [];
+  });
+  return cachedVoices;
+}
 
 // Remove marcações que a voz leria em voz alta
 function cleanText(text: string): string {
@@ -196,8 +224,12 @@ export async function speak(text: string, profile: VoiceProfile): Promise<void> 
   await Speech.stop();
 
   const identity = await resolveIdentity(profile);
-  const state =
-    profile.emotionalState ?? inferEmotionalState(cleaned, profile.personality);
+  // Emoção inferida do texto e da pressão do interrogatório
+  const state = inferEmotionalState(
+    cleaned,
+    profile.personality,
+    profile.pressure,
+  );
   const plan = planProsody(
     identity,
     profile.personality,

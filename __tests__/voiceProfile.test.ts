@@ -1,4 +1,4 @@
-import { getVoiceParams } from '../src/services/voice/voiceProfile';
+import { getVoiceParams } from '../src/services/voice/voiceIdentity';
 import { VoiceProfile } from '../src/types/voice.services.types';
 
 const adultMale: VoiceProfile = {

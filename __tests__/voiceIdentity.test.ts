@@ -1,15 +1,17 @@
 import { mockSuspects } from '../src/mocks';
-import { InstalledVoice } from '../src/services/voice/voiceCatalog';
+import {
+  InstalledVoice,
+  MIN_VOICE_DISTANCE,
+} from '../src/services/voice/voiceConfig';
 import {
   buildCaseVoiceIdentities,
-  MIN_VOICE_DISTANCE,
   VoiceIdentity,
 } from '../src/services/voice/voiceIdentity';
 import { VoiceSubject } from '../src/types/voice.services.types';
 
 const VOICES: InstalledVoice[] = [
-  { identifier: 'pt-br-x-ptd-network', gender: 'masculino', pitchOffset: -0.05, rateOffset: 0.05 },
-  { identifier: 'pt-br-x-pte-network', gender: 'feminino', pitchOffset: -0.08, rateOffset: 0.05 },
+  { key: 'ptd-network', identifier: 'pt-br-x-ptd-network', gender: 'masculino', pitchOffset: -0.05, rateOffset: 0.05 },
+  { key: 'pte-network', identifier: 'pt-br-x-pte-network', gender: 'feminino', pitchOffset: -0.08, rateOffset: 0.05 },
 ];
 
 const distance = (a: VoiceIdentity, b: VoiceIdentity) =>
@@ -67,7 +69,7 @@ describe('buildCaseVoiceIdentities', () => {
   it('distribui vozes do mesmo gênero antes de repetir', () => {
     const voices: InstalledVoice[] = [
       ...VOICES,
-      { identifier: 'pt-br-x-extra-network', gender: 'masculino', pitchOffset: 0, rateOffset: 0 },
+      { key: 'extra-network', identifier: 'pt-br-x-extra-network', gender: 'masculino', pitchOffset: 0, rateOffset: 0 },
     ];
     const identities = buildCaseVoiceIdentities(clones.slice(0, 2), voices);
     const used = new Set([...identities.values()].map(i => i.voice));

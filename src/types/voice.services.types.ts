@@ -1,14 +1,11 @@
-import { EmotionalState } from './emotion.types';
 import { SuspectGender, SuspectPersonality } from './suspect.types';
 
 export interface VoiceProfile {
   gender: SuspectGender;
   personality: SuspectPersonality;
   age: number;
-  // Id do suspeito para garantir que ele mantenha a mesma voz única no caso
-  id?: string;
-  // Estado emocional da fala atual. Sem ele, a emoção é inferida do texto
-  emotionalState?: EmotionalState;
+  id?: string;                      // Id do suspeito para garantir que ele mantenha a mesma voz única no caso
+  pressure?: number;                // Perguntas já feitas, quanto maior, mais abalado o suspeito soa
 }
 
 // Dados mínimos de um suspeito para reservar a voz dele no caso
@@ -28,9 +25,10 @@ export interface IVoiceService {
 
   // Reconhecimento de voz
   listen: () => Promise<string>;
-  // listen já deve parar de escutar sozinho, mas este método será útil para interromper quando necessário
+
+  // Útil para interromper o áudio quando necessário
   stopListening: () => Promise<void>;
 
-  // Solicitar as permissões necessárias do android através dos pop ups nativos
+  // Solicita as permissões necessárias do android através dos pop ups nativos
   requestPermissions: () => Promise<boolean>;
 }
