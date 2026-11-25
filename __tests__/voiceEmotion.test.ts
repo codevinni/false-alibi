@@ -1,10 +1,18 @@
 import {
   inferEmotionalState,
-  normalizeEmotionalState,
   planProsody,
 } from '../src/services/voice/voiceEmotion';
 import { VoiceIdentity } from '../src/services/voice/voiceIdentity';
-import { SUSPECT_EMOTIONS } from '../src/types/emotion.types';
+import { SuspectEmotion } from '../src/types/emotion.types';
+
+const EMOTIONS: SuspectEmotion[] = [
+  'calmo',
+  'confiante',
+  'defensivo',
+  'nervoso',
+  'assustado',
+  'irritado',
+];
 
 const identity: VoiceIdentity = {
   voice: 'pt-br-x-ptd-network',
@@ -14,27 +22,8 @@ const identity: VoiceIdentity = {
   pauseMs: 200,
 };
 
-const plan = (emotion: (typeof SUSPECT_EMOTIONS)[number], intensity = 1, n = 3) =>
+const plan = (emotion: SuspectEmotion, intensity = 1, n = 3) =>
   planProsody(identity, 'defensivo', { emotion, intensity }, n, 'seed');
-
-describe('normalizeEmotionalState', () => {
-  it('aceita variações de gênero e acento vindas da IA', () => {
-    expect(normalizeEmotionalState({ emotion: 'Nervosa', intensity: '0.6' })).toEqual({
-      emotion: 'nervoso',
-      intensity: 0.6,
-    });
-  });
-
-  it('limita a intensidade e usa um padrão quando ela falta', () => {
-    expect(normalizeEmotionalState({ emotion: 'irritado', intensity: 7 })?.intensity).toBe(1);
-    expect(normalizeEmotionalState({ emotion: 'calmo' })?.intensity).toBe(0.5);
-  });
-
-  it('rejeita emoções desconhecidas', () => {
-    expect(normalizeEmotionalState({ emotion: 'feliz' })).toBeUndefined();
-    expect(normalizeEmotionalState({})).toBeUndefined();
-  });
-});
 
 describe('inferEmotionalState', () => {
   it('usa a emoção de base da personalidade sem pistas no texto', () => {
@@ -66,7 +55,7 @@ describe('inferEmotionalState', () => {
 
 describe('planProsody', () => {
   it('gera uma prosódia por frase, dentro dos limites', () => {
-    SUSPECT_EMOTIONS.forEach(emotion => {
+    EMOTIONS.forEach(emotion => {
       const result = plan(emotion);
       expect(result).toHaveLength(3);
       result.forEach(p => {

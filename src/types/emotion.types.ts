@@ -1,19 +1,15 @@
 /* Estado emocional do suspeito durante o interrogatório */
 
-// Emoções que a IA pode devolver juntamente com cada resposta
-export const SUSPECT_EMOTIONS = [
-  'calmo',
-  'confiante',
-  'defensivo',
-  'nervoso',
-  'assustado',
-  'irritado',
-] as const;
-
-export type SuspectEmotion = (typeof SUSPECT_EMOTIONS)[number];
+// Emoções que a voz do suspeito pode expressar
+export type SuspectEmotion =
+  | 'calmo'
+  | 'confiante'
+  | 'defensivo'
+  | 'nervoso'
+  | 'assustado'
+  | 'irritado';
 
 export interface EmotionalState {
   emotion: SuspectEmotion;
-  // 0 = quase imperceptível, 1 = emoção no máximo
-  intensity: number;
+  intensity: number; // 0 = quase imperceptível, 1 = emoção no máximo
 }

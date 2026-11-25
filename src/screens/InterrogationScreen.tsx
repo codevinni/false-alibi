@@ -10,7 +10,7 @@ import { mockSuspects } from '../mocks';
 import { ScreenProps, useNavigation, useRoute } from '../navigation';
 import { audioService, useSoundHandler } from '../services/audio';
 import { useStaticImage, useSuspectAvatar } from '../services/media';
-import { getMessageEmotionalState, voiceService } from '../services/voice';
+import { voiceService } from '../services/voice';
 import { Message } from '../types/interrogation.types';
 import ScreenBackground from '../components/ScreenBackground';
 import SuspectAvatar from '../components/SuspectAvatar';
@@ -146,11 +146,7 @@ export default function InterrogationScreen({
         gender: suspect.gender,
         personality: suspect.personality,
         age: suspect.age,
-        emotionalState: getMessageEmotionalState(
-          answer,
-          suspect.personality,
-          pressure,
-        ),
+        pressure,
       });
     } catch (error) {
       setNotice({ text: `Erro: ${String(error)}`, isError: true });
