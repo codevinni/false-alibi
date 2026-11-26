@@ -9,6 +9,7 @@ import React, { useEffect } from 'react';
 import { StatusBar, StyleSheet } from 'react-native';
 import Orientation from 'react-native-orientation-locker';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GameProvider } from './src/context/GameContext';
 import { AppNavigator } from './src/navigation';
 import { audioService } from './src/services/audio';
 
@@ -31,7 +32,9 @@ function App() {
   return (
     <SafeAreaProvider style={styles.container}>
       <StatusBar hidden={true} />
-      <AppNavigator />
+      <GameProvider>
+        <AppNavigator />
+      </GameProvider>
     </SafeAreaProvider>
   );
 }
